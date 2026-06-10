@@ -184,7 +184,7 @@ const cloudGroup = new THREE.Group();
       mesh.position.set((crng() - 0.5) * 14, (crng() - 0.5) * 2, (crng() - 0.5) * 8);
       cluster.add(mesh);
     }
-    cluster.position.set((crng() - 0.5) * 360, 65 + crng() * 25, (crng() - 0.5) * 360);
+    cluster.position.set((crng() - 0.5) * 420, 130 + crng() * 40, (crng() - 0.5) * 420);
     cluster.userData.speed = 0.6 + crng() * 0.9;
     cloudGroup.add(cluster);
   }
