@@ -78,18 +78,11 @@
 
   .sect { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
 
-  /* ---- districts (right) ---- */
+  /* ---- atlas (right) ---- */
   #districts {
     position:fixed; top:64px; right:12px; width:300px; z-index:15;
     padding:13px 15px; max-height:calc(100vh - 220px); overflow-y:auto; scrollbar-width:thin;
   }
-  .drow { display:grid; grid-template-columns:15px 1fr 30px; gap:7px; align-items:center; margin:6px 0; font-size:11.5px; cursor:default; }
-  .drow .sw { width:11px; height:11px; border-radius:2px; }
-  .drow .nm b { display:block; }
-  .drow .nm i { font-style:normal; color:var(--muted); font-size:10px; }
-  .drow .track { grid-column:2 / 4; height:7px; background:rgba(255,255,255,.07); border-radius:4px; overflow:hidden; margin-top:-1px; }
-  .drow .track i { display:block; height:100%; width:0; border-radius:4px; transition:width .8s ease; }
-  .drow .pc { text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
   #mapwrap { margin-top:12px; }
   #worldmap { width:100%; border-radius:8px; background:#0e1626; image-rendering:pixelated; }
   #mapnote { color:var(--muted); font-size:10px; margin-top:5px; line-height:1.45; }
@@ -188,11 +181,9 @@
 </div>
 
 <div id="districts" class="panel">
-  <div class="sect" style="margin-top:0">Districts — who your audience is</div>
-  <div id="dlist"></div>
-  <div class="sect">Voxel atlas — where they are</div>
+  <div class="sect" style="margin-top:0">Voxel atlas — where they are</div>
   <div id="mapwrap"><canvas id="worldmap" width="280" height="150"></canvas></div>
-  <div id="mapnote">37 of 79 citizens pinned a hometown — 13 regions, 4 continents. Capital: <b style="color:var(--text)">SF Bay (14)</b>, then Europe (8), Toronto (3).</div>
+  <div id="mapnote">37 of 79 citizens pinned a hometown — 13 regions, 4 continents. Capital: <b style="color:var(--text)">SF Bay (14)</b>, then Europe (8), Toronto (3).<br><br>District names &amp; shares are on the billboards above each quarter — fly around!</div>
 </div>
 
 <div id="badges" class="panel"></div>
@@ -372,7 +363,7 @@ let night = false, dirty = true;
 let view = { x: 0, y: 0, z: Math.max(.45, Math.min(innerWidth/1950, innerHeight/1300)) };
 let prims = [];                                  // sorted draw list
 let buildings = [];                              // pickable
-let walkers = [], confetti = [];
+let walkers = [], confetti = [], signs = [];     // signs = district billboards
 let buildDone = false;
 
 function px(x, y, z){ return { x: (x - y) * T + W_OFF.x, y: (x + y) * T * 0.5 - z * HZ + W_OFF.y }; }
@@ -437,7 +428,7 @@ const landAt = (x, y) => Math.hypot(x + .5, y + .5) <= R_ISLAND;
 
 function genWorld(){
   resetRnd();
-  prims = []; buildings = []; walkers = []; confetti = []; cellOwner.clear();
+  prims = []; buildings = []; walkers = []; confetti = []; signs = []; cellOwner.clear();
 
   const groundEv = [], roadEv = [], keepEv = [], distEv = {}, decorEv = [];
   BUILD_ORDER.forEach(k => distEv[k] = []);
@@ -492,6 +483,8 @@ function genWorld(){
     }
   keepEv.push({k:"box",x:0,y:0,z:16,h:1,c:"#ffe08a",glow:true});
   buildings.push({x:-2,y:-2,w:5,z:0,h:17,me:true});
+  signs.push({ dk:"KEEP", x:0, y:0, z:24, ui:"#ffc857",
+    name:"SHENGKUN'S KEEP", l2:"pop. 1,638 · LVL 11 · Baron", pct:0 });
 
   // --- districts ---
   const byRole = {};
@@ -522,13 +515,14 @@ function genWorld(){
         ? {k:"box",x,y,z:0,h:1,c:"#8a9b5a",cTop:shade2(D.wall,.35)}
         : {k:"tile",x,y,z:0,c:shade2(D.wall,.42)});
     // buildings on alternating cells
-    let bi = 0;
+    let bi = 0, maxH = 2;
     for (const [x,y] of blob){
       if (bi >= list.length) break;
       if (((x+y)%2+2)%2 !== 0) continue;
       const c = list[bi++];
       const h = Math.max(2, Math.min(12, Math.round(Math.pow(c[2]+6, .28))));
       const z0 = hill ? 1 : 0;
+      maxH = Math.max(maxH, z0 + h + 1.1);
       distEv[k].push({k:"box",x,y,z:z0,h,c:D.wall,win:true,bld:true});
       distEv[k].push({k:"box",x,y,z:z0+h,h:.55,c:D.roof,cTop:D.roof});
       if (c[2] >= 10000) distEv[k].push({k:"box",x,y,z:z0+h+.55,h:.5,c:"#ffe08a",glow:true}); // whale cap
@@ -537,6 +531,11 @@ function genWorld(){
     // lamp at district mouth
     distEv[k].push({k:"box",x:cx,y:cy,z:hill?1:0,h:1.6,c:"#7a7f8a"});
     distEv[k].push({k:"box",x:cx,y:cy,z:(hill?1:0)+1.6,h:.5,c:"#ffe9a3",glow:true});
+    // billboard above the district (staggered heights so neighbors don't collide)
+    const stag = (BUILD_ORDER.indexOf(k) % 3) * 2.6;
+    signs.push({ dk:k, x:cx, y:cy, z:maxH + 3 + stag, ui:D.ui,
+      name:D.name.toUpperCase(), l2:`${list.length} citizens · ${Math.round(100*list.length/CITIZENS.length)}%`,
+      pct:list.length/CITIZENS.length });
   }
 
   // --- cottages (the quieter 1,559 followers) + trees ---
@@ -574,11 +573,11 @@ function scheduleBuild(){
     { rate: 0,   hold: 600,  tick: 1 },
     { items: w.groundEv,  rate: 260, tick: 2, onstart: () => countUp("st-pop", 1638), },
     { items: w.roadEv,    rate: 200, tick: 3, flash: true },
-    { items: w.keepEv,    rate: 26,  tick: 4, onstart: () => { countUp("st-allies", 729); animXP(); } },
-    { items: [...w.distEv.V, ...w.distEv.R, ...w.distEv.B], rate: 60, tick: 5, badges:[0,1] },
-    { items: [...w.distEv.E, ...w.distEv.G],                rate: 60, tick: 6, badges:[2,3] },
-    { items: [...w.distEv.C, ...w.distEv.D],                rate: 60, tick: 7, badges:[4,5], onstart: drawAtlas },
-    { items: w.distEv.F,                                    rate: 70, tick: 8, badges:[6,7], onstart: animDistricts },
+    { items: w.keepEv,    rate: 26,  tick: 4, sgn:["KEEP"], onstart: () => { countUp("st-allies", 729); animXP(); } },
+    { items: [...w.distEv.V, ...w.distEv.R, ...w.distEv.B], rate: 60, tick: 5, badges:[0,1], sgn:["V","R","B"] },
+    { items: [...w.distEv.E, ...w.distEv.G],                rate: 60, tick: 6, badges:[2,3], sgn:["E","G"] },
+    { items: [...w.distEv.C, ...w.distEv.D],                rate: 60, tick: 7, badges:[4,5], sgn:["C","D"], onstart: drawAtlas },
+    { items: w.distEv.F,                                    rate: 70, tick: 8, badges:[6,7], sgn:["F"] },
     { items: w.decorEv,   rate: 150, tick: 9, badges:[8,9], onstart: () => { countUp("st-court", COURT_REACH); countUpX("st-reach", 99); } },
     { rate: 0, hold: 500, tick: 10, onstart: finale },
   ];
@@ -616,7 +615,10 @@ function stepBuild(dt){
   if (ph.items && ph.items.length){
     budget += ph.rate * dt / 1000;
     while (budget >= 1 && ph.items.length){ addPrim(ph.items.shift()); budget--; }
-    if (!ph.items.length){ phaseI++; budget = 0; }
+    if (!ph.items.length){
+      if (ph.sgn) ph.sgn.forEach(showSign);
+      phaseI++; budget = 0;
+    }
   } else if (!ph.items){
     if (ph._t >= (ph.hold || 400)){ phaseI++; }
   } else { phaseI++; }
@@ -655,8 +657,9 @@ function animXP(){
     document.getElementById("xpfill").style.width = (p < 1 ? p*100 : 100*XP.intoLevel/XP.levelSpan) + "%";
     if (p<1) requestAnimationFrame(f); })(t0);
 }
-function animDistricts(){
-  document.querySelectorAll(".drow .track i").forEach(el => el.style.width = el.dataset.w + "%");
+function showSign(k){
+  const s = signs.find(s2 => s2.dk === k);
+  if (s && !s.on){ s.on = true; s.t0 = performance.now(); }
 }
 function popBadge(i){
   const el = document.querySelectorAll(".badge")[i];
@@ -778,6 +781,44 @@ function frame(t){
     ctx.ellipse(cx2, cy2, 58+i*7, 15, 0, 0, 7); ctx.ellipse(cx2+38, cy2+7, 38, 12, 0, 0, 7);
     ctx.fill();
   }
+  // district billboards
+  const MONO = "ui-monospace, Menlo, Consolas, monospace";
+  ctx.textBaseline = "top";
+  for (const s of signs){
+    if (!s.on) continue;
+    const kk = Math.min(1, (t - s.t0) / 450);
+    const ease = 1 - Math.pow(1 - kk, 3);
+    const p = wpt(px(s.x + .5, s.y + .5, s.z));
+    const q = wpt(px(s.x + .5, s.y + .5, s.z - 2.2));
+    const sc = Math.max(.8, Math.min(1.25, view.z));
+    ctx.globalAlpha = ease;
+    ctx.strokeStyle = s.ui; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+    ctx.fillStyle = s.ui; ctx.fillRect(q.x - 2, q.y - 2, 4, 4);
+    ctx.font = `700 ${11*sc}px ${MONO}`;
+    const w1 = ctx.measureText(s.name).width;
+    ctx.font = `${9.5*sc}px ${MONO}`;
+    const w2 = ctx.measureText(s.l2).width;
+    const W = Math.max(w1, w2) + 28*sc, H = (s.pct ? 40 : 33)*sc;
+    const x0 = p.x - W/2, y0 = p.y - H - 5*sc - (1 - ease)*14;
+    ctx.fillStyle = "rgba(13,17,27,.92)";
+    ctx.fillRect(x0, y0, W, H);
+    ctx.strokeStyle = s.ui; ctx.strokeRect(x0, y0, W, H);
+    ctx.fillStyle = s.ui;
+    ctx.fillRect(x0 + 8*sc, y0 + 8*sc, 7*sc, 7*sc);
+    ctx.font = `700 ${11*sc}px ${MONO}`;
+    ctx.fillText(s.name, x0 + 20*sc, y0 + 6*sc);
+    ctx.fillStyle = "#b6c0d4";
+    ctx.font = `${9.5*sc}px ${MONO}`;
+    ctx.fillText(s.l2, x0 + 20*sc, y0 + 20*sc);
+    if (s.pct){
+      ctx.fillStyle = "rgba(255,255,255,.13)";
+      ctx.fillRect(x0 + 20*sc, y0 + 32*sc, W - 28*sc, 3*sc);
+      ctx.fillStyle = s.ui;
+      ctx.fillRect(x0 + 20*sc, y0 + 32*sc, (W - 28*sc) * s.pct, 3*sc);
+    }
+    ctx.globalAlpha = 1;
+  }
   // hover highlight
   if (hover && hover.b){
     const b = hover.b, pTop = px(b.x, b.y, b.z + b.h), pTop2 = px(b.x+b.w, b.y+b.w, b.z + b.h);
@@ -857,20 +898,6 @@ function buildPanels(){
     av.fillStyle = SPR[y][x]==="1" ? "#ffc857" : "#1a1f2e";
     av.fillRect(x,y,1,1);
   }
-  // districts list
-  const byRole = {};
-  CITIZENS.forEach(c => byRole[c[3]] = (byRole[c[3]]||0)+1);
-  const order = Object.keys(DISTRICTS).sort((a,b)=>byRole[b]-byRole[a]);
-  const dl = document.getElementById("dlist");
-  dl.innerHTML = order.map(k => {
-    const D = DISTRICTS[k], n = byRole[k], pc = Math.round(100*n/CITIZENS.length);
-    return `<div class="drow" title="${D.tag}">
-      <span class="sw" style="background:${D.ui}"></span>
-      <span class="nm"><b>${D.name}</b><i>${D.tag}</i></span>
-      <span class="pc">${n}</span>
-      <span class="track"><i data-w="${pc}" style="background:${D.ui}"></i></span>
-    </div>`;
-  }).join("");
   // badges
   const bd = document.getElementById("badges");
   bd.innerHTML = BADGES.map(([e, n, d]) => `<div class="badge" title="${n} — ${d}">${e}</div>`).join("");

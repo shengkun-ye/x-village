@@ -22,9 +22,12 @@ Everything in it is real data, pulled live on **2026-06-10** via
    engaged the last 9 posts: Founders' Keep (51%), Engineers' Forge, Design
    Commons, Growth Bazaar, Crypto Docks, the **Bot Quarter** (4 literal AI
    agents — Boardy, Agent Hansa & co. — engage this account), VC Overlook (on a
-   hill, obviously) and the Athenaeum. Hover any building to meet its real
-   citizen — bio, followers, district; click to open their profile. Accounts
-   over 10K followers get gold "whale caps".
+   hill, obviously) and the Athenaeum. Every district flies its own
+   **billboard** — name, citizen count, share bar — popping in as the quarter
+   finishes building, so you can navigate the kingdom without a side panel.
+   Hover any building to meet its real citizen — bio, followers, district;
+   click to open their profile. Accounts over 10K followers get gold
+   "whale caps".
 4. **Game stats** — Level 11 from 1,233 real engagements (XP), the title
    *Baron of the Algorithm* from the 2.25 follower∶following ratio, a ×99
    reach multiplier (162,717 views vs 1,638 followers), 157,723 court reach,
