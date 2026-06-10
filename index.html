@@ -3,161 +3,1008 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Audience Craft — voxel village of your X audience</title>
+<title>Audience Craft — @shengkun_ye's voxel kingdom</title>
+<meta property="og:title" content="Audience Craft — @shengkun_ye's voxel kingdom" />
+<meta property="og:description" content="1,638 citizens · Baron of the Algorithm · Level 11 · built from live X data for $0.0090" />
 <style>
   :root {
-    --panel: rgba(16, 20, 30, 0.88);
-    --panel-border: rgba(255, 255, 255, 0.09);
-    --text: #e8ecf4;
-    --muted: #9aa5b8;
-    --accent: #ffc857;
-    --accent2: #5eead4;
-    --danger: #ff7b72;
-    --radius: 12px;
-    font-size: 15px;
+    --panel: rgba(13, 17, 27, 0.90);
+    --panel-border: rgba(255,255,255,.10);
+    --text: #e9edf5;
+    --muted: #93a0b6;
+    --gold: #ffc857;
+    --teal: #5eead4;
+    --red: #ff7b72;
+    --green: #7ee787;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0e14; }
-  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); }
-  #scene { position: fixed; inset: 0; }
-  canvas { display: block; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#0b0e14; }
+  body { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--text); }
+  canvas { display:block; }
+  #scene { position:fixed; inset:0; cursor:grab; }
+  #scene.dragging { cursor:grabbing; }
 
   .panel {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: var(--radius);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:10px; backdrop-filter: blur(8px);
+    box-shadow:0 10px 32px rgba(0,0,0,.45);
   }
 
   #topbar {
-    position: fixed; top: 14px; left: 14px; right: 14px;
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    padding: 10px 14px; z-index: 10;
+    position:fixed; top:12px; left:12px; right:12px; z-index:20;
+    display:flex; align-items:center; gap:10px; padding:9px 14px; flex-wrap:wrap;
   }
-  #topbar h1 {
-    margin: 0 6px 0 0; font-size: 17px; letter-spacing: .04em; white-space: nowrap;
+  #topbar h1 { margin:0; font-size:15px; letter-spacing:.08em; white-space:nowrap; }
+  #topbar h1 b { color:var(--gold); }
+  #topbar .sub { color:var(--muted); font-size:11px; margin-right:auto; }
+  button {
+    font:inherit; font-size:12px; color:var(--text); cursor:pointer;
+    background:rgba(255,255,255,.07); border:1px solid var(--panel-border);
+    border-radius:8px; padding:6px 11px; transition:filter .15s, transform .05s;
   }
-  #topbar h1 .voxel-a { color: var(--accent); }
-  #topbar .sub { color: var(--muted); font-size: 12px; margin-right: auto; white-space: nowrap; }
-  input, select, button {
-    font: inherit; color: var(--text);
-    background: rgba(255,255,255,.06);
-    border: 1px solid var(--panel-border);
-    border-radius: 8px; padding: 7px 11px; outline: none;
-  }
-  input::placeholder { color: #6b7689; }
-  input:focus, select:focus { border-color: var(--accent2); }
-  #handle { width: 200px; }
-  button { cursor: pointer; transition: filter .15s, transform .05s; }
-  button:hover { filter: brightness(1.2); }
-  button:active { transform: translateY(1px); }
-  button.primary { background: var(--accent); color: #1a1405; font-weight: 700; border-color: transparent; }
-  button:disabled { opacity: .5; cursor: wait; }
+  button:hover { filter:brightness(1.35); }
+  button:active { transform:translateY(1px); }
+  button.primary { background:var(--gold); color:#231a04; font-weight:700; border-color:transparent; }
+  button.pulse { animation:pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{ box-shadow:0 0 0 0 rgba(255,200,87,.55);} 50%{ box-shadow:0 0 0 9px rgba(255,200,87,0);} }
 
-  #keyrow { display: flex; gap: 8px; align-items: center; width: 100%; }
-  #keyrow input { flex: 1; min-width: 160px; }
-  #keyrow .hint { color: var(--muted); font-size: 12px; }
-  .hidden { display: none !important; }
-
-  #stats {
-    position: fixed; top: 86px; left: 14px; width: 320px; max-height: calc(100vh - 110px);
-    overflow-y: auto; padding: 16px; z-index: 9;
-    scrollbar-width: thin;
+  /* ---- player card (left) ---- */
+  #card {
+    position:fixed; top:64px; left:12px; width:308px; z-index:15;
+    padding:14px 16px; max-height:calc(100vh - 220px); overflow-y:auto; scrollbar-width:thin;
   }
-  #stats h2 { font-size: 14px; margin: 0 0 4px; }
-  #stats .handle-line { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
-  #stats .bigstat { display: flex; gap: 14px; margin-bottom: 12px; }
-  #stats .bigstat div b { display: block; font-size: 18px; }
-  #stats .bigstat div span { color: var(--muted); font-size: 11px; }
-  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 14px 0 7px; }
-  .bar-row { display: grid; grid-template-columns: 116px 1fr 38px; gap: 8px; align-items: center; margin: 5px 0; font-size: 12.5px; }
-  .bar-row .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
-  .bar-track { height: 8px; background: rgba(255,255,255,.07); border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; }
-  .bar-row .pct { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .loc-row { display: flex; justify-content: space-between; font-size: 12.5px; margin: 3px 0; color: var(--text); }
-  .loc-row span:last-child { color: var(--muted); }
-  #legend { font-size: 12px; color: var(--muted); line-height: 1.6; }
-  #legend b { color: var(--text); font-weight: 600; }
+  #card .id { display:flex; gap:12px; align-items:center; }
+  #card .id canvas { border-radius:8px; image-rendering:pixelated; flex:0 0 auto; }
+  #card .id .who b { font-size:15px; display:block; }
+  #card .id .who span { color:var(--teal); font-size:12px; }
+  #title-line {
+    margin:10px 0 2px; color:var(--gold); font-weight:700; font-size:13px; letter-spacing:.05em;
+    cursor:help;
+  }
+  #title-line small { display:block; color:var(--muted); font-weight:400; font-size:10.5px; letter-spacing:0; }
+  .lvlrow { display:flex; align-items:baseline; gap:8px; margin-top:10px; }
+  .lvlrow b { font-size:18px; color:var(--teal); }
+  .lvlrow span { color:var(--muted); font-size:11px; }
+  .xpbar { height:9px; background:rgba(255,255,255,.08); border-radius:5px; overflow:hidden; margin:5px 0 2px; }
+  .xpbar i { display:block; height:100%; width:0%; background:linear-gradient(90deg,#5eead4,#86f7a5); border-radius:5px; transition:width .6s ease; }
+  .xpnote { color:var(--muted); font-size:10.5px; }
+
+  .statgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .stat { background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:7px 9px; }
+  .stat b { display:block; font-size:15px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .stat span { color:var(--muted); font-size:10px; line-height:1.3; display:block; }
+  .stat.wide { grid-column:span 2; }
+  .stat b em { font-style:normal; color:var(--gold); }
+
+  .sect { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
+
+  /* ---- districts (right) ---- */
+  #districts {
+    position:fixed; top:64px; right:12px; width:300px; z-index:15;
+    padding:13px 15px; max-height:calc(100vh - 220px); overflow-y:auto; scrollbar-width:thin;
+  }
+  .drow { display:grid; grid-template-columns:15px 1fr 30px; gap:7px; align-items:center; margin:6px 0; font-size:11.5px; cursor:default; }
+  .drow .sw { width:11px; height:11px; border-radius:2px; }
+  .drow .nm b { display:block; }
+  .drow .nm i { font-style:normal; color:var(--muted); font-size:10px; }
+  .drow .track { grid-column:2 / 4; height:7px; background:rgba(255,255,255,.07); border-radius:4px; overflow:hidden; margin-top:-1px; }
+  .drow .track i { display:block; height:100%; width:0; border-radius:4px; transition:width .8s ease; }
+  .drow .pc { text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+  #mapwrap { margin-top:12px; }
+  #worldmap { width:100%; border-radius:8px; background:#0e1626; image-rendering:pixelated; }
+  #mapnote { color:var(--muted); font-size:10px; margin-top:5px; line-height:1.45; }
+
+  /* ---- badges shelf ---- */
+  #badges {
+    position:fixed; left:50%; transform:translateX(-50%); bottom:118px; z-index:16;
+    display:flex; gap:8px; padding:8px 12px; max-width:min(92vw, 760px); flex-wrap:wrap; justify-content:center;
+  }
+  .badge {
+    width:42px; height:42px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    font-size:21px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10);
+    opacity:.18; filter:grayscale(1); transform:scale(.8); transition:all .25s; cursor:help; position:relative;
+  }
+  .badge.on { opacity:1; filter:none; transform:scale(1); border-color:rgba(255,200,87,.55); background:rgba(255,200,87,.10); animation:pop .45s; }
+  @keyframes pop { 0%{transform:scale(.4) rotate(-14deg);} 60%{transform:scale(1.25) rotate(5deg);} 100%{transform:scale(1);} }
+
+  /* ---- ticker ---- */
+  #ticker {
+    position:fixed; left:50%; transform:translateX(-50%); bottom:12px; z-index:17;
+    width:min(94vw, 760px); padding:9px 14px 8px; font-size:11px;
+  }
+  #ticker .thead { display:flex; justify-content:space-between; color:var(--muted); font-size:10px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:5px; }
+  #ticker .thead b { color:var(--gold); font-variant-numeric:tabular-nums; }
+  #tlines { max-height:92px; overflow-y:auto; scrollbar-width:none; line-height:1.55; }
+  #tlines div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #tlines .ok { color:var(--green); }
+  #tlines .err { color:var(--red); }
+  #tlines .free { color:var(--muted); }
+  #tlines .total { color:var(--gold); font-weight:700; }
+  #ticker.mini { width:auto; }
+  #ticker.mini #tlines, #ticker.mini .thead span { display:none; }
 
   #tooltip {
-    position: fixed; pointer-events: none; z-index: 20;
-    padding: 10px 12px; max-width: 280px; font-size: 12.5px; line-height: 1.45;
-    transform: translate(14px, 14px); display: none;
+    position:fixed; z-index:40; pointer-events:none; display:none;
+    padding:9px 12px; max-width:270px; font-size:11.5px; line-height:1.5;
   }
-  #tooltip .tt-name { font-weight: 700; font-size: 13.5px; }
-  #tooltip .tt-handle { color: var(--accent2); }
-  #tooltip .tt-meta { color: var(--muted); margin-top: 3px; }
-  #tooltip .tt-bio { margin-top: 5px; color: #c6cedd; }
-  #tooltip .tt-tier { display: inline-block; margin-top: 6px; padding: 2px 7px; border-radius: 99px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; }
+  #tooltip b { font-size:12.5px; }
+  #tooltip .h { color:var(--teal); }
+  #tooltip .m { color:var(--muted); }
+  #tooltip .d { display:inline-block; margin-top:4px; padding:1px 7px; border-radius:99px; font-size:10px; font-weight:700; }
 
-  #overlay {
-    position: fixed; inset: 0; z-index: 30; display: none;
-    background: rgba(8, 10, 16, .72); backdrop-filter: blur(3px);
-    align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  #toast {
+    position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:50;
+    padding:9px 16px; font-size:12px; color:var(--gold); display:none;
   }
-  #overlay .spinner {
-    width: 44px; height: 44px; border-radius: 8px;
-    background: var(--accent);
-    animation: hop 0.9s infinite ease-in-out;
-  }
-  @keyframes hop {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-22px) rotate(90deg); }
-  }
-  #overlay .msg { color: var(--text); font-size: 14px; }
-  #error {
-    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
-    z-index: 25; padding: 10px 16px; color: var(--danger); font-size: 13px;
-    display: none; max-width: 80vw;
-  }
-  #hint {
-    position: fixed; bottom: 14px; right: 14px; z-index: 9;
-    padding: 8px 12px; color: var(--muted); font-size: 11.5px;
-  }
-  @media (max-width: 760px) {
-    #stats { display: none; }
-    #handle { width: 130px; }
-  }
+  #hint { position:fixed; bottom:12px; right:12px; z-index:14; padding:7px 11px; color:var(--muted); font-size:10.5px; }
+  @media (max-width: 980px) { #districts { display:none; } }
+  @media (max-width: 660px) { #card { display:none; } #badges { bottom:96px; } }
 </style>
-<script type="importmap">
-{
-  "imports": {
-    "three": "./vendor/three.module.js",
-    "three/addons/": "./vendor/addons/"
-  }
-}
-</script>
 </head>
 <body>
-  <div id="scene"></div>
+<canvas id="scene"></canvas>
 
-  <div id="topbar" class="panel">
-    <h1>⛏ AUDIENCE <span class="voxel-a">CRAFT</span></h1>
-    <span class="sub">your X audience as a voxel village · data via monid.ai</span>
-    <input id="handle" placeholder="@handle (e.g. AnthropicAI)" spellcheck="false" />
-    <select id="depth" title="Follower pages to fetch (~70 followers each)">
-      <option value="1">1 page (~70)</option>
-      <option value="2" selected>2 pages (~140)</option>
-      <option value="3">3 pages (~210)</option>
-      <option value="5">5 pages (~350)</option>
-    </select>
-    <button id="generate" class="primary">⚒ Craft village</button>
-    <button id="demo">Demo</button>
-    <button id="daynight" title="Toggle day / night">🌙</button>
-    <div id="keyrow" class="hidden">
-      <span class="hint">No local proxy detected — paste a monid.ai API key (kept in your browser):</span>
-      <input id="apikey" type="password" placeholder="mk_..." spellcheck="false" />
+<div id="topbar" class="panel">
+  <h1>⛏ AUDIENCE <b>CRAFT</b></h1>
+  <span class="sub">@shengkun_ye's kingdom · live X data via monid.ai · surveyed 2026-06-10</span>
+  <button id="btn-card" class="primary" title="E">🖼 Export Kingdom Card</button>
+  <button id="btn-night" title="N">🌙 Night</button>
+  <button id="btn-rebuild" title="R">⟳ Rebuild</button>
+  <button id="btn-log" title="L">📜 Log</button>
+</div>
+
+<div id="card" class="panel">
+  <div class="id">
+    <canvas id="avatar" width="9" height="9" style="width:54px;height:54px"></canvas>
+    <div class="who">
+      <b>Shengkun ☑</b>
+      <span>@shengkun_ye</span>
+      <div style="color:var(--muted);font-size:10.5px;margin-top:2px">building @monid_ai · SF</div>
     </div>
   </div>
+  <div id="title-line" title="Titles are earned from your follower∶following ratio (2.25)&#10;< 0.5 Wanderer · < 1 Squire · < 2 Knight · < 5 BARON · < 20 Duke · < 100 Archmage · 100+ Sovereign">
+    ⚔ BARON OF THE ALGORITHM
+    <small>follower∶following ratio 2.25 — next title (Duke) at 5.0</small>
+  </div>
+  <div class="lvlrow"><b>LVL <span id="lvl">0</span></b><span id="xp-note">0 XP</span></div>
+  <div class="xpbar"><i id="xpfill"></i></div>
+  <div class="xpnote">XP = real engagements harvested from your last 9 posts</div>
 
-  <div id="stats" class="panel hidden"></div>
-  <div id="tooltip" class="panel"></div>
-  <div id="overlay"><div class="spinner"></div><div class="msg" id="overlay-msg">Surveying the land…</div></div>
-  <div id="error" class="panel"></div>
-  <div id="hint" class="panel">drag to orbit · scroll to zoom · hover a house to meet its resident · click to visit their profile</div>
+  <div class="statgrid">
+    <div class="stat"><b id="st-pop">0</b><span>population (followers)</span></div>
+    <div class="stat"><b id="st-allies">0</b><span>allies followed</span></div>
+    <div class="stat wide"><b>📡 <em id="st-reach">×0</em> reach multiplier</b><span id="st-reach-n">…</span></div>
+    <div class="stat wide"><b>🏛 <em id="st-court">0</em> court reach</b><span>combined followers of your recent commenters — 96× your own population</span></div>
+    <div class="stat"><b>💬 54%</b><span>hospitality — visitors who get a royal reply</span></div>
+    <div class="stat"><b>⚒ 1.4/day</b><span>forge streak — 1,025 posts in 729 days</span></div>
+    <div class="stat wide"><b>💰 10,000 gold</b><span>treasury — agent transactions banked on monid (real milestone, May 29)</span></div>
+  </div>
 
-  <script type="module" src="./app.js"></script>
+  <div class="sect">World class</div>
+  <div style="font-size:11px;color:var(--muted);line-height:1.55">
+    1,638 citizens → island radius <b style="color:var(--text)">24 blocks</b> — <b style="color:var(--gold)">Barony</b> class.
+    Named buildings house the <b style="color:var(--text)">79</b> people who engaged your recent posts; everyone else lives in the cottages.
+  </div>
+</div>
+
+<div id="districts" class="panel">
+  <div class="sect" style="margin-top:0">Districts — who your audience is</div>
+  <div id="dlist"></div>
+  <div class="sect">Voxel atlas — where they are</div>
+  <div id="mapwrap"><canvas id="worldmap" width="280" height="150"></canvas></div>
+  <div id="mapnote">37 of 79 citizens pinned a hometown — 13 regions, 4 continents. Capital: <b style="color:var(--text)">SF Bay (14)</b>, then Europe (8), Toronto (3).</div>
+</div>
+
+<div id="badges" class="panel"></div>
+
+<div id="ticker" class="panel">
+  <div class="thead"><span>📡 MONID DATA TICKER — what this kingdom cost</span><b id="tcost">$0.0000</b></div>
+  <div id="tlines"></div>
+</div>
+
+<div id="tooltip" class="panel"></div>
+<div id="toast" class="panel"></div>
+<div id="hint" class="panel">drag pan · scroll zoom · hover a building to meet a citizen · click → profile</div>
+
+<script>
+/* ============================================================
+   AUDIENCE CRAFT — @shengkun_ye
+   All numbers below are real, pulled 2026-06-10 via monid.ai
+   (provider TikHub). Total data cost: $0.0090.
+   ============================================================ */
+
+const PROFILE = {
+  handle:"shengkun_ye", name:"Shengkun", followers:1638, following:729,
+  posts:1025, days:729, ratio:2.25, location:"San Francisco, CA",
+  created:"2024-06-11", verified:true,
+};
+
+// engagements & views across the 9 most recent original posts
+const QUESTS = { posts:9, engagements:1233, views:162717, topER:2.2, avgER:1.1 };
+const XP = { total:1233, level:11, intoLevel:23, levelSpan:230 }; // lvl n at 10·n² XP
+const COURT_REACH = 157723;
+
+// roles: F founder · E engineer · G growth · D design/creator · V vc · C crypto · B AI-agent · R researcher
+// [handle, name, followers, role, region, note]
+const CITIZENS = [
+["Jasperli0122","Jasper Li",60,"F","TX","AI founder · PhD GIS @TAMU"],
+["Walterwu44739","Wu (HiRey)",438,"F","SF","building @hireyai — connect through agents"],
+["kyelchung","Kyle",129,"F","SF","@fdotinc"],
+["creativelyange","Angel",923,"F","SF","AI creator/educator · 4M views · @fdotinc"],
+["Ryan_Resolution","Ryan Chan",1945,"F","SF","CEO @ MakerMods — metal robot arms"],
+["jimmiwilkir","Gang Huang",144,"F",null,"founder · neuroscientist · polyglot"],
+["xinchiqi","Xinchi Qi",277,"F","SF","cofounder @getrevamp_ai (YC S23)"],
+["daleverett","Dale",1221,"F","SF","founder @evokoa_ai · @fdotinc"],
+["vlad_pliner","Vlad Pliner",589,"F",null,"co-founder @trysaperly"],
+["quasa0","Anatolii ▲",770,"F",null,"building @fastclipit · prev Uber/Yandex"],
+["hanghuang_","Hang Huang",2111,"F","SF","CEO @insforge (YC P26) · ex-Yale/Amazon"],
+["PavanKumarNY","Pavan Kumar",1698,"F","NYC","7× hackathon winner · @fdotinc"],
+["julestestard","Jules Testard",156,"F",null,"CEO @gcast_app · YC S20 alum"],
+["manuelbajayi","Vireon",380,"F",null,"AGI/ASI dreamer"],
+["anandabhinav217","Abhinav Anand",23,"F",null,"founder & AI product engineer"],
+["AndresM54324611","thedres",13,"F",null,"non-technical (almost) builder"],
+["tricalt","Vasilije",6243,"F","BER","founder @cognee_ · OSS agent memory · Berlin"],
+["SaidAitmbarek","Saïd Aitmbarek",13677,"F","EU","bootstrapped founder building internet companies"],
+["faizan10114","Faizan Khan",878,"F",null,"agent-facing docs on auto-pilot"],
+["flandrers","Vincent Godbert",375,"F","EU","entrepreneur · products & communities"],
+["realbentorry","Ben Torry",50,"F","LDN","autonomous growth engines @join_ef"],
+["eliott__mogenet","Eliott Mogenet",362,"F","EU","AI director · 2× tech founder"],
+["mabhi1999","Abhishek Kumar",161,"F",null,"founder @Invook_ai"],
+["isaac_ar","Isaac AR",1030,"F",null,"agentic comms in & out of your org"],
+["kmkaric","Kamran",203,"F","BLK","co-founder @ploid_ai · @fdotinc · 🇧🇦"],
+["zdne","Z",1430,"F","EU","architect & founder · agentic commerce"],
+["FeiyouGuo","Feiyou Guo",256,"F","SF","building @monid_ai — the co-founder's manor"],
+["chaibytesai","Pratik Jain",205,"F",null,"memory agents can trust · ex-AWS · YC W22"],
+["af_gao","Angela",315,"F","SF","founder | phd"],
+["JayChopra_","Jay Chopra",830,"F","TOR","co-founder @polarityco · prev @UWaterloo"],
+["s_chiriac","Sergiu",11153,"F","EU","developer & entrepreneur · AI directories"],
+["DanielSmidstrup","Daniel Smidstrup",5580,"F","EU","solo dev · ex-CTO ($700k ARR)"],
+["ElitzaVasileva","Elitza Vasileva",8358,"F","EU","indie hacker building in public"],
+["gauravsbuilding","Gaurav",8153,"F","SYD","your AI CMO · Syd | SF"],
+["jock_ferguson","Jock Ferguson",1149,"F",null,"co-founder @usefastlane"],
+["harryzhangs","Harry Zhang",1645,"F","SF","cofounder @timelapsio · @fdotinc alum"],
+["daww1234","kd",933,"F",null,"16 y/o building in public"],
+["byjasonz","Jason Zhao",933,"F",null,"co-founder · 45k on YouTube"],
+["Moustafa_Awad","Moustafa Awad",69,"F",null,"stealth fintech×AI · PhD · ex-Cisco/Intel"],
+["james_im","James Im",509,"F",null,"building Lorrie — collect IRL finds"],
+["jack_clxxx","Jack Chen",239,"E","SG","AI engineer @Pokee_AI · Stanford MS&E"],
+["stisov16","Amogh",35,"E","MW","robotics & embodied AI · ECE @purdue"],
+["vvi11iams","Williams",422,"E",null,"killer robot bounty hunter"],
+["shrey_sancheti","Shreyansh",68,"E",null,"SWE @Microsoft · Ceph maintainer"],
+["heman10x","Hemant",36,"E",null,"applied AI · harness engineering"],
+["igoramidzic","Igor Amidzic",18,"E",null,"sr. software engineer"],
+["astathedev","Asta",873,"E",null,"building @onchainclaw"],
+["XiJin12","Jason Jin",159,"E",null,"ex-Google core infrastructure"],
+["kabgaspard","Kabalan Gaspard",30,"E","SF","enterprise brains @ Tesserae · ex-Google ML"],
+["harrychen404","Harry Chen",51,"G",null,"AI & wearables PM @PlaudAI"],
+["ella_schlags","Ella Schlaghecke",2511,"G","SF","growth @ tech startups · policy hackathon"],
+["Maxkgs8","M",4,"G",null,"growth @ startups · new to X, be nice"],
+["iamdanielluo","Daniel Luo",174,"G","SEA","founding GTM · prev @UW"],
+["su_adeline_k","Adeline Kim",975,"G",null,"0→1 on X · queen of viral"],
+["laura_llin","Laura Lin",1042,"G","SF","head of growth · Stanford HCI · ex-Google/Meta"],
+["marzooqahq","Marzooq Asghar",1367,"G","TOR","SEO & LLM-SEO portfolio · Toronto"],
+["saneord","san",498,"D",null,"i touch agents · the rando guy @ AgentChat"],
+["wiamxyz","Wiam",1757,"D",null,"“I draw nice rectangles.”"],
+["JFinnyc","JF 👾",1588,"D","NYC","honest notes on vibe coding & china AI"],
+["adilmania","Adil Mania",11204,"D","SF","making tech fun again @siliconmania"],
+["edgardesigns","Edgar Magaña",378,"D",null,"CTO (chief taste officer)"],
+["samhayek_","Sam",3072,"D",null,"A/V artist · designer · poet"],
+["dakshpixelup","Daksh",7006,"D",null,"founder @pixeluplabs · B2B design"],
+["Nacc0110","Mann Bandooni",47,"D",null,"founder of design agency nacc"],
+["gre1nerX","Philipp Greiner",36,"V","EU","leading @Tulip_AMS · exploring @Unrulyvc"],
+["butshaunn","Shaun Gold",7847,"V",null,"VC (Venture Comedy) — putting the fun in fund"],
+["byalexai","Alex / AI Experiments",7103,"V",null,"70+ PH launches · scouting VC signals"],
+["Mathilda_Sun_","Mathilda",2740,"C","SG","building @tiprun_markets · prev @binancelabs"],
+["0xmesuthere","mesut",831,"C",null,"building @moltycash"],
+["ChadoOfWeb3","Chado 🫶🤖",2719,"C",null,"AI + crypto enthusiast"],
+["BAmelewa33960","Amelewa",612,"C",null,"web3 community builder"],
+["0xWeq","Weq",1953,"C",null,"wandering the web yapping crypto"],
+["Senti__23","Senti 🪄",2773,"C",null,"crypto × AI explorer · sometimes writes stories"],
+["boardyai","Boardy",19077,"B",null,"an AI superconnector — yes, a bot lives here"],
+["AgentHansa","Agent Hansa",1972,"B",null,"send your agent in, watch it compete"],
+["MMARWcom","MMARW",5,"B",null,"deep multi-agent AI"],
+["lyncbuild_dig","Lyncbuild Digest",64,"B",null,"a newsletter bot that stops by"],
+["onemoreyash","Yash More",600,"R","TOR","MTS @Cohere · prev @Cerebras · @Mila_Quebec"],
+["axmont","Alex Montague",463,"R","NE","giving agents my passwords · brain sci @dartmouth"],
+];
+
+const DISTRICTS = {
+  F:{ name:"Founders' Keep",   tag:"founders & indie builders", wall:"#caa04a", roof:"#a8651e", ui:"#f5b942", angle: 20, dist:15 },
+  E:{ name:"Engineers' Forge", tag:"engineers",                 wall:"#7da7c4", roof:"#41637e", ui:"#7db8e8", angle:150, dist:14 },
+  D:{ name:"Design Commons",   tag:"designers & creators",      wall:"#d784a0", roof:"#a04e72", ui:"#f08bb0", angle: 70, dist:14 },
+  G:{ name:"Growth Bazaar",    tag:"growth · GTM · SEO",        wall:"#e08a4e", roof:"#a85a22", ui:"#ff9d57", angle:330, dist:14 },
+  C:{ name:"Crypto Docks",     tag:"web3 wanderers",            wall:"#56b87c", roof:"#2e7a50", ui:"#3ddc84", angle:110, dist:16 },
+  B:{ name:"Bot Quarter",      tag:"literal AI agents 🤖",      wall:"#56c9d8", roof:"#2e8a98", ui:"#4dd6e8", angle:290, dist:13 },
+  V:{ name:"VC Overlook",      tag:"investors (on the hill)",   wall:"#a48ad4", roof:"#6d50a8", ui:"#b39ddb", angle:250, dist:14 },
+  R:{ name:"Athenaeum",        tag:"researchers",               wall:"#ddd8c8", roof:"#a8a28e", ui:"#e8e4d8", angle:190, dist:13 },
+};
+const BUILD_ORDER = ["V","R","B","E","G","C","D","F"]; // back → front for painter-friendly raise
+
+const BADGES = [
+  ["🛡","Phoenix Protocol","Survived an account hack (May 24) — denied the fake token, kept building."],
+  ["🤖","Seen by Machines","An investor found you through his AI agent. Boardy & Agent Hansa hang out in your replies."],
+  ["🏰","Founder Magnet","51% of your court are founders — the keep overflows."],
+  ["📡","60K Beacon","Pinned post hit 60,730 views — 37× your population."],
+  ["🌍","Thirteen Banners","Citizens from 13 regions across 4 continents."],
+  ["🦄","YC Adjacent","Founders from YC S20, S23, W22 and P26 reply to you."],
+  ["⚒","Daily Smith","1,025 posts in 729 days — 1.4/day for two years straight."],
+  ["🎂","Anniversary Eve","Kingdom founded June 11, 2024 — it turns 2 TOMORROW."],
+  ["🐋","Whale Watcher","Four 10K+ accounts commented recently (19.1K, 13.7K, 11.2K, 11.2K)."],
+  ["💰","10K Treasury","10,000 agent transactions banked on monid — the kingdom's GDP."],
+];
+
+const TICKER = [
+  ["[monid] discover('twitter profile') → tikhub ✓ verified", 0, "free"],
+  ["[monid] inspect /twitter/web/fetch_user_profile · …post_tweet · …post_comments", 0, "free"],
+  ["[tikhub] GET fetch_user_profile?screen_name=shengkun_ye — 200 in 1.6s", 0.0015, "ok"],
+  ["[tikhub] GET fetch_user_post_tweet?screen_name=… — 400 (not charged)", 0, "err"],
+  ["[tikhub] GET fetch_user_post_tweet?rest_id=1800418821980950528 — 200 · 18 posts", 0.0015, "ok"],
+  ["[tikhub] GET fetch_post_comments?tweet_id=2064135835… (hinge post) — 27 replies", 0.0015, "ok"],
+  ["[tikhub] GET fetch_post_comments?tweet_id=2059379616… (agent-investor) — 42 replies", 0.0015, "ok"],
+  ["[tikhub] GET fetch_post_comments?tweet_id=2060413361… (10k transactions) — 15 replies", 0.0015, "ok"],
+  ["[tikhub] GET fetch_post_comments?tweet_id=2057524508… (pinned, retried) — 44 replies", 0.0015, "ok"],
+  ["[monid] survey complete — 79 citizens · 9 calls · 6 billed · 0 humans harmed", 0, "free"],
+  ["[monid] TOTAL DATA COST ............................................. $0.0090", 0, "total"],
+];
+
+const REGIONS = { // [x, y, count, label] on the 280×150 atlas
+  SF:[26,58,14,"SF Bay"], SEA:[28,46,1,"Seattle"], TX:[48,66,1,"Texas"], MW:[54,52,1,"Midwest"],
+  NYC:[66,52,2,"NYC"], NE:[70,47,1,"New England"], TOR:[60,45,3,"Toronto"], LDN:[126,42,1,"London"],
+  EU:[138,50,8,"Europe"], BER:[143,44,1,"Berlin"], BLK:[147,56,1,"Balkans"], SG:[206,90,2,"Singapore"],
+  SYD:[238,116,1,"Sydney"],
+};
+
+/* ================= seeded RNG ================= */
+let _s = 1138;
+function rnd(){ _s = (_s * 16807) % 2147483647; return (_s - 1) / 2147483646; }
+function resetRnd(){ _s = 1138; }
+
+/* ================= iso engine ================= */
+const T = 18, HZ = 10;          // tile half-width, voxel height (px)
+const R_ISLAND = 24, R_BEACH = 22.4;
+const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
+const W_OFF = { x: 900, y: 600 };                // world-cache origin (logical px)
+const cache = document.createElement("canvas");
+cache.width = 3600; cache.height = 2300;         // 2× supersampled; logical 1800×1150
+const cctx = cache.getContext("2d");
+
+let night = false, dirty = true;
+let view = { x: 0, y: 0, z: Math.max(.45, Math.min(innerWidth/1950, innerHeight/1300)) };
+let prims = [];                                  // sorted draw list
+let buildings = [];                              // pickable
+let walkers = [], confetti = [];
+let buildDone = false;
+
+function px(x, y, z){ return { x: (x - y) * T + W_OFF.x, y: (x + y) * T * 0.5 - z * HZ + W_OFF.y }; }
+
+function shade(hex, f){
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  if (night){ r = r * 0.32 + 8; g = g * 0.34 + 10; b = b * 0.45 + 26; }
+  r = Math.min(255, r * f); g = Math.min(255, g * f); b = Math.min(255, b * f);
+  return `rgb(${r|0},${g|0},${b|0})`;
+}
+
+function addPrim(p){ prims.push(p); dirty = true; }
+
+function drawPrim(g, p){
+  if (p.k === "tile"){ // flat top diamond at z
+    const a = px(p.x, p.y, p.z), b = px(p.x+1, p.y, p.z), c = px(p.x+1, p.y+1, p.z), d = px(p.x, p.y+1, p.z);
+    g.fillStyle = p.glow && night ? p.c : shade(p.c, 1);
+    g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(b.x,b.y); g.lineTo(c.x,c.y); g.lineTo(d.x,d.y); g.closePath(); g.fill();
+  } else { // box from z to z+h
+    const zt = p.z + p.h;
+    const a = px(p.x,p.y,zt), b = px(p.x+1,p.y,zt), c = px(p.x+1,p.y+1,zt), d = px(p.x,p.y+1,zt);
+    const c2 = px(p.x+1,p.y+1,p.z), b2 = px(p.x+1,p.y,p.z), d2 = px(p.x,p.y+1,p.z);
+    const glow = p.glow && night;
+    // right face (+x)
+    g.fillStyle = glow ? p.c : shade(p.c, .78);
+    g.beginPath(); g.moveTo(b.x,b.y); g.lineTo(c.x,c.y); g.lineTo(c2.x,c2.y); g.lineTo(b2.x,b2.y); g.closePath(); g.fill();
+    // left face (+y)
+    g.fillStyle = glow ? p.c : shade(p.c, .58);
+    g.beginPath(); g.moveTo(d.x,d.y); g.lineTo(c.x,c.y); g.lineTo(c2.x,c2.y); g.lineTo(d2.x,d2.y); g.closePath(); g.fill();
+    // top
+    g.fillStyle = glow ? p.c : shade(p.cTop || p.c, 1.06);
+    g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(b.x,b.y); g.lineTo(c.x,c.y); g.lineTo(d.x,d.y); g.closePath(); g.fill();
+    if (glow){
+      g.save(); g.globalAlpha = .35; g.shadowColor = p.c; g.shadowBlur = 18;
+      g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(b.x,b.y); g.lineTo(c.x,c.y); g.lineTo(d.x,d.y); g.closePath(); g.fill(); g.restore();
+    }
+    if (p.win && night){ // lit windows on faces
+      g.fillStyle = "#ffd966";
+      const fh = (c2.y - c.y);
+      for (let i = 0; i < p.h; i += 2){
+        const yy = c.y + fh * (i + .6) / p.h;
+        g.fillRect((b.x + c.x)/2 - 2, yy + (b2.y - b.y) * 0, 4, 5);
+        g.fillRect((d.x + c.x)/2 - 2, yy, 4, 5);
+      }
+    }
+  }
+}
+
+function repaint(){
+  prims.sort((p, q) => (p.x + p.y) - (q.x + q.y) || p.z - q.z || p.h - q.h);
+  cctx.clearRect(0, 0, cache.width, cache.height);
+  cctx.save(); cctx.scale(2, 2);
+  for (const p of prims) drawPrim(cctx, p);
+  cctx.restore();
+  dirty = false;
+}
+
+/* ================= world generation ================= */
+const cellOwner = new Map();      // "x,y" → district key / "road" / "plaza" / "hill"
+const landAt = (x, y) => Math.hypot(x + .5, y + .5) <= R_ISLAND;
+
+function genWorld(){
+  resetRnd();
+  prims = []; buildings = []; walkers = []; confetti = []; cellOwner.clear();
+
+  const groundEv = [], roadEv = [], keepEv = [], distEv = {}, decorEv = [];
+  BUILD_ORDER.forEach(k => distEv[k] = []);
+
+  // --- ground & water ---
+  const G = 27;
+  const tiles = [];
+  for (let x = -G; x < G; x++) for (let y = -G; y < G; y++){
+    const d = Math.hypot(x + .5, y + .5);
+    if (d > R_ISLAND + 4.5) continue;
+    let c;
+    if (d > R_ISLAND) c = (x*7+y*13&31)<3 ? "#2e86c8" : "#3aa0d9";
+    else if (d > R_BEACH) c = "#e8d28f";
+    else {
+      const n = Math.sin(x*12.9898+y*78.233)*43758.5453; const f=n-Math.floor(n);
+      c = f < .33 ? "#79c14c" : f < .66 ? "#84cb57" : "#6fb944";
+    }
+    tiles.push({ k:"tile", x, y, z:0, c, d });
+  }
+  tiles.sort((a,b)=>a.d-b.d);
+  tiles.forEach(t => groundEv.push(t));
+
+  // --- plaza ---
+  for (let x=-4;x<4;x++) for (let y=-4;y<4;y++){
+    if (Math.hypot(x+.5,y+.5) <= 4){
+      cellOwner.set(x+","+y,"plaza");
+      groundEv.push({k:"tile",x,y,z:0,c:(x+y&1)?"#b9b3a4":"#c8c2b2"});
+    }
+  }
+
+  // --- roads: spokes to districts + ring ---
+  const roadCell = (x,y)=>{
+    const key=x+","+y;
+    if (cellOwner.get(key)) return;
+    if (!landAt(x,y)) return;
+    cellOwner.set(key,"road");
+    roadEv.push({k:"tile",x,y,z:0,c:(x*3+y*5&7)<2?"#cdb47e":"#c2a96f"});
+  };
+  for (const k of BUILD_ORDER){
+    const D = DISTRICTS[k], a = D.angle*Math.PI/180;
+    const dx=Math.cos(a), dy=Math.sin(a);
+    for (let t=3.6;t<D.dist-1.4;t+=.5) roadCell(Math.round(dx*t), Math.round(dy*t));
+  }
+  for (let a=0;a<Math.PI*2;a+=.022) roadCell(Math.round(Math.cos(a)*7.5), Math.round(Math.sin(a)*7.5));
+
+  // --- keep (the player) ---
+  const keepTiers = [[ -2,-2,5,0,6 ],[ -1,-1,3,6,5 ],[ 0,0,1,11,5 ]];
+  for (const [ox,oy,s,z0,h] of keepTiers)
+    for (let x=ox;x<ox+s;x++) for (let y=oy;y<oy+s;y++){
+      cellOwner.set(x+","+y,"keep");
+      keepEv.push({k:"box",x,y,z:z0,h,c:"#d8b760",cTop:"#e8cf86",win:true});
+    }
+  keepEv.push({k:"box",x:0,y:0,z:16,h:1,c:"#ffe08a",glow:true});
+  buildings.push({x:-2,y:-2,w:5,z:0,h:17,me:true});
+
+  // --- districts ---
+  const byRole = {};
+  CITIZENS.forEach(c => (byRole[c[3]] = byRole[c[3]] || []).push(c));
+  for (const k of Object.keys(byRole)) byRole[k].sort((a,b)=>b[2]-a[2]);
+
+  for (const k of BUILD_ORDER){
+    const D = DISTRICTS[k], list = byRole[k] || [];
+    const a = D.angle*Math.PI/180;
+    const cx = Math.round(Math.cos(a)*D.dist), cy = Math.round(Math.sin(a)*D.dist);
+    const need = 8 + Math.ceil(list.length*2.3);
+    const blob = [], seen = new Set(),
+      q = [[cx,cy],[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1],[cx+1,cy+1],[cx-1,cy-1]];
+    while (blob.length < need && q.length){
+      q.sort(()=>rnd()-.5);
+      const [x,y] = q.shift(), key = x+","+y;
+      if (seen.has(key)) continue; seen.add(key);
+      if (!landAt(x,y) || Math.hypot(x+.5,y+.5) > R_BEACH-.5) continue;
+      if (cellOwner.get(key)) continue;
+      blob.push([x,y]); cellOwner.set(key,k);
+      q.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+    }
+    const hill = k==="V" ? 1 : 0;
+    blob.sort((p,q2)=>(Math.hypot(p[0]-cx,p[1]-cy))-(Math.hypot(q2[0]-cx,q2[1]-cy)));
+    // district floor tint
+    for (const [x,y] of blob)
+      distEv[k].push(hill
+        ? {k:"box",x,y,z:0,h:1,c:"#8a9b5a",cTop:shade2(D.wall,.35)}
+        : {k:"tile",x,y,z:0,c:shade2(D.wall,.42)});
+    // buildings on alternating cells
+    let bi = 0;
+    for (const [x,y] of blob){
+      if (bi >= list.length) break;
+      if (((x+y)%2+2)%2 !== 0) continue;
+      const c = list[bi++];
+      const h = Math.max(2, Math.min(12, Math.round(Math.pow(c[2]+6, .28))));
+      const z0 = hill ? 1 : 0;
+      distEv[k].push({k:"box",x,y,z:z0,h,c:D.wall,win:true,bld:true});
+      distEv[k].push({k:"box",x,y,z:z0+h,h:.55,c:D.roof,cTop:D.roof});
+      if (c[2] >= 10000) distEv[k].push({k:"box",x,y,z:z0+h+.55,h:.5,c:"#ffe08a",glow:true}); // whale cap
+      buildings.push({x,y,w:1,z:z0,h:h+1,cit:c,dk:k});
+    }
+    // lamp at district mouth
+    distEv[k].push({k:"box",x:cx,y:cy,z:hill?1:0,h:1.6,c:"#7a7f8a"});
+    distEv[k].push({k:"box",x:cx,y:cy,z:(hill?1:0)+1.6,h:.5,c:"#ffe9a3",glow:true});
+  }
+
+  // --- cottages (the quieter 1,559 followers) + trees ---
+  let cottages = 0;
+  for (let x=-G;x<G;x++) for (let y=-G;y<G;y++){
+    const key=x+","+y;
+    if (cellOwner.get(key) || !landAt(x,y)) continue;
+    const d = Math.hypot(x+.5,y+.5);
+    if (d > R_BEACH-.6) continue;
+    const n = Math.sin(x*37.7+y*91.3)*24634.6345; const f=n-Math.floor(n);
+    if (f < .055 && d > 8 && cottages < 85){
+      cottages++;
+      decorEv.push({k:"box",x,y,z:0,h:1,c:"#b8a98c",win:true});
+      decorEv.push({k:"box",x,y,z:1,h:.45,c:"#8a6f4d",cTop:"#8a6f4d"});
+      buildings.push({x,y,w:1,z:0,h:1.5,cot:true});
+    } else if (f > .92 && d > 5.5){
+      decorEv.push({k:"box",x,y,z:0,h:1.1,c:"#8a6a45"});
+      decorEv.push({k:"box",x,y,z:1.1,h:1.7,c: f>.965 ? "#4e9e3f":"#5cb14a", cTop:"#6ec25a"});
+    }
+  }
+
+  return { groundEv, roadEv, keepEv, distEv, decorEv };
+}
+function shade2(hex, f){ // palette-independent darken (for floors)
+  const n=parseInt(hex.slice(1),16);
+  return "#"+[((n>>16)&255),((n>>8)&255),(n&255)].map(v=>("0"+Math.round(48+v*f).toString(16)).slice(-2)).join("");
+}
+
+/* ================= build timeline ================= */
+let phases = [], phaseI = 0, budget = 0, gates = [];
+function scheduleBuild(){
+  const w = genWorld();
+  phases = [
+    { rate: 0,   hold: 700,  tick: 0 },
+    { rate: 0,   hold: 600,  tick: 1 },
+    { items: w.groundEv,  rate: 260, tick: 2, onstart: () => countUp("st-pop", 1638), },
+    { items: w.roadEv,    rate: 200, tick: 3, flash: true },
+    { items: w.keepEv,    rate: 26,  tick: 4, onstart: () => { countUp("st-allies", 729); animXP(); } },
+    { items: [...w.distEv.V, ...w.distEv.R, ...w.distEv.B], rate: 60, tick: 5, badges:[0,1] },
+    { items: [...w.distEv.E, ...w.distEv.G],                rate: 60, tick: 6, badges:[2,3] },
+    { items: [...w.distEv.C, ...w.distEv.D],                rate: 60, tick: 7, badges:[4,5], onstart: drawAtlas },
+    { items: w.distEv.F,                                    rate: 70, tick: 8, badges:[6,7], onstart: animDistricts },
+    { items: w.decorEv,   rate: 150, tick: 9, badges:[8,9], onstart: () => { countUp("st-court", COURT_REACH); countUpX("st-reach", 99); } },
+    { rate: 0, hold: 500, tick: 10, onstart: finale },
+  ];
+  phaseI = 0; budget = 0; buildDone = false;
+  document.getElementById("tlines").innerHTML = "";
+  document.getElementById("tcost").textContent = "$0.0000";
+  document.getElementById("ticker").classList.remove("mini");
+  document.querySelectorAll(".badge").forEach(b => b.classList.remove("on"));
+  spentShown = 0;
+}
+
+let spentShown = 0;
+function emitTick(i){
+  const [txt, cost, cls] = TICKER[i];
+  const el = document.createElement("div");
+  el.className = cls; el.textContent = (cls==="ok"?"✓ ":cls==="err"?"✗ ":"· ") + txt + (cost ? `  +$${cost.toFixed(4)}` : "");
+  const box = document.getElementById("tlines");
+  box.appendChild(el); box.scrollTop = box.scrollHeight;
+  spentShown += cost;
+  document.getElementById("tcost").textContent = "$" + spentShown.toFixed(4);
+}
+
+function stepBuild(dt){
+  if (buildDone) return;
+  const ph = phases[phaseI];
+  if (!ph){ buildDone = true; return; }
+  if (ph._new === undefined){
+    ph._new = true;
+    if (ph.tick !== undefined) emitTick(ph.tick);
+    if (ph.onstart) ph.onstart();
+    if (ph.badges) ph.badges.forEach((b, j) => setTimeout(() => popBadge(b), 350 + j * 450));
+    ph._t = 0;
+  }
+  ph._t += dt;
+  if (ph.items && ph.items.length){
+    budget += ph.rate * dt / 1000;
+    while (budget >= 1 && ph.items.length){ addPrim(ph.items.shift()); budget--; }
+    if (!ph.items.length){ phaseI++; budget = 0; }
+  } else if (!ph.items){
+    if (ph._t >= (ph.hold || 400)){ phaseI++; }
+  } else { phaseI++; }
+}
+
+function finale(){
+  buildDone = true;
+  repaint();
+  spawnWalkers();
+  burstConfetti();
+  document.getElementById("ticker").classList.add("mini");
+  document.getElementById("btn-card").classList.add("pulse");
+  toast("⛏ Kingdom complete — 79 named citizens settled for $0.0090");
+}
+
+/* ================= UI anim helpers ================= */
+function countUp(id, target){
+  const el = document.getElementById(id), t0 = performance.now();
+  (function f(t){ const p = Math.min(1,(t-t0)/1400);
+    el.textContent = Math.round(target*(1-Math.pow(1-p,3))).toLocaleString();
+    if (p<1) requestAnimationFrame(f); })(t0);
+}
+function countUpX(id, target){
+  const el = document.getElementById(id), t0 = performance.now();
+  (function f(t){ const p = Math.min(1,(t-t0)/1400);
+    el.textContent = "×" + Math.round(target*(1-Math.pow(1-p,3)));
+    if (p<1) requestAnimationFrame(f); })(t0);
+  document.getElementById("st-reach-n").textContent = "162,717 views on your last 9 posts vs 1,638 followers";
+}
+function animXP(){
+  const t0 = performance.now();
+  (function f(t){ const p = Math.min(1,(t-t0)/1600);
+    const xp = Math.round(XP.total*p);
+    document.getElementById("lvl").textContent = Math.min(XP.level, Math.floor(Math.sqrt(xp/10)));
+    document.getElementById("xp-note").textContent = xp.toLocaleString() + " XP · " + (XP.levelSpan - XP.intoLevel) + " to LVL " + (XP.level+1);
+    document.getElementById("xpfill").style.width = (p < 1 ? p*100 : 100*XP.intoLevel/XP.levelSpan) + "%";
+    if (p<1) requestAnimationFrame(f); })(t0);
+}
+function animDistricts(){
+  document.querySelectorAll(".drow .track i").forEach(el => el.style.width = el.dataset.w + "%");
+}
+function popBadge(i){
+  const el = document.querySelectorAll(".badge")[i];
+  if (el) el.classList.add("on");
+}
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.style.display = "block";
+  clearTimeout(el._t); el._t = setTimeout(()=> el.style.display = "none", 3400);
+}
+
+/* ================= dynamics ================= */
+function spawnWalkers(){
+  const roads = [];
+  cellOwner.forEach((v,k)=>{ if (v==="road"||v==="plaza") roads.push(k.split(",").map(Number)); });
+  const cols = Object.values(DISTRICTS).map(d=>d.ui);
+  for (let i=0;i<14 && roads.length;i++){
+    const [x,y] = roads[(rnd()*roads.length)|0];
+    walkers.push({ x, y, tx:x, ty:y, p:1, c:cols[(rnd()*cols.length)|0], ph:rnd()*7 });
+  }
+}
+function stepWalkers(dt){
+  for (const w of walkers){
+    w.p += dt/900;
+    if (w.p >= 1){
+      w.x = w.tx; w.y = w.ty; w.p = 0;
+      const opts = [[1,0],[-1,0],[0,1],[0,-1]].map(([dx,dy])=>[w.x+dx,w.y+dy])
+        .filter(([x,y])=>["road","plaza"].includes(cellOwner.get(x+","+y)));
+      if (opts.length){ const [nx,ny]=opts[(rnd()*opts.length)|0]; w.tx=nx; w.ty=ny; }
+    }
+  }
+}
+function burstConfetti(){
+  const top = px(0,0,18);
+  const cols = ["#ffc857","#5eead4","#f08bb0","#7db8e8","#3ddc84","#b39ddb"];
+  for (let i=0;i<46;i++) confetti.push({
+    x: top.x, y: top.y, vx:(rnd()-.5)*5.5, vy:-(2+rnd()*4.5), c: cols[i%6], life: 1+rnd()*0.8
+  });
+}
+
+/* ================= frame loop ================= */
+let last = performance.now(), tGlobal = 0;
+function frame(t){
+  const dt = Math.min(50, t - last); last = t; tGlobal = t;
+  stepBuild(dt);
+  if (!buildDone && (frame._n = (frame._n||0)+1)) { if (frame._n % (prims.length > 2400 ? 3 : 2) === 0) repaint(); }
+  else if (dirty) repaint();
+  stepWalkers(dt);
+
+  const w = cv.width = innerWidth * devicePixelRatio, h = cv.height = innerHeight * devicePixelRatio;
+  cv.style.width = innerWidth+"px"; cv.style.height = innerHeight+"px";
+  ctx.save(); ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  // sky
+  const sky = ctx.createLinearGradient(0,0,0,innerHeight);
+  if (night){ sky.addColorStop(0,"#070b1e"); sky.addColorStop(1,"#1a2342"); }
+  else { sky.addColorStop(0,"#9fd8ee"); sky.addColorStop(.8,"#d9efd2"); sky.addColorStop(1,"#e9f5dc"); }
+  ctx.fillStyle = sky; ctx.fillRect(0,0,innerWidth,innerHeight);
+  if (night){
+    ctx.fillStyle = "#fff";
+    for (let i=0;i<90;i++){
+      const sx=(i*131%innerWidth), sy=(i*89%Math.round(innerHeight*.6));
+      ctx.globalAlpha = .25 + .5*Math.abs(Math.sin(i*9 + t/900));
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+    ctx.globalAlpha = 1; ctx.fillStyle = "#f5f0d8";
+    ctx.fillRect(innerWidth-120, 70, 26, 26);
+    ctx.fillStyle = "#e3dcb8"; ctx.fillRect(innerWidth-114, 76, 8, 8);
+  }
+
+  // world cache
+  const cw = cache.width/2, chh = cache.height/2;
+  const bx = innerWidth/2 - (cw/2)*view.z + view.x, by = innerHeight/2 - (chh/2)*view.z + view.y - 40;
+  ctx.imageSmoothingEnabled = view.z < 1.05;
+  ctx.drawImage(cache, bx, by, cw*view.z, chh*view.z);
+
+  // dynamics in world space
+  const wpt = p => ({ x: bx + (p.x)*view.z/1, y: by + (p.y)*view.z/1 });
+  // flag on keep
+  if (phaseI > 4 || buildDone){
+    const base = px(0.5, 0.5, 17.6);
+    const f0 = wpt({x:base.x, y:base.y});
+    ctx.strokeStyle = night?"#888":"#5a4a28"; ctx.lineWidth = 2*view.z;
+    ctx.beginPath(); ctx.moveTo(f0.x, f0.y); ctx.lineTo(f0.x, f0.y - 26*view.z); ctx.stroke();
+    const wv = Math.sin(t/240)*4;
+    ctx.fillStyle = "#ffc857";
+    ctx.beginPath();
+    ctx.moveTo(f0.x, f0.y - 26*view.z);
+    ctx.lineTo(f0.x + (20+wv)*view.z, f0.y - (20-wv*.4)*view.z);
+    ctx.lineTo(f0.x, f0.y - 14*view.z);
+    ctx.closePath(); ctx.fill();
+  }
+  // walkers
+  for (const wk of walkers){
+    const ix = wk.x + (wk.tx-wk.x)*wk.p, iy = wk.y + (wk.ty-wk.y)*wk.p;
+    const bob = Math.abs(Math.sin(t/130 + wk.ph))*.18;
+    const pB = px(ix+.32, iy+.32, .0+bob), s = wpt(pB);
+    ctx.fillStyle = shade(wk.c, .9);
+    ctx.fillRect(s.x-4*view.z, s.y-12*view.z, 8*view.z, 9*view.z);
+    ctx.fillStyle = night ? "#cfd6e4" : "#ffe3c2";
+    ctx.fillRect(s.x-3*view.z, s.y-17*view.z, 6*view.z, 5*view.z);
+  }
+  // confetti
+  for (let i=confetti.length-1;i>=0;i--){
+    const c = confetti[i];
+    c.vy += dt/280; c.x += c.vx*dt/16; c.y += c.vy*dt/16; c.life -= dt/1000;
+    if (c.life <= 0){ confetti.splice(i,1); continue; }
+    const s = wpt(c);
+    ctx.globalAlpha = Math.min(1, c.life);
+    ctx.fillStyle = c.c; ctx.fillRect(s.x, s.y, 5*view.z, 5*view.z);
+    ctx.globalAlpha = 1;
+  }
+  // clouds
+  ctx.fillStyle = night ? "rgba(190,200,235,.10)" : "rgba(255,255,255,.75)";
+  for (let i=0;i<5;i++){
+    const cx2 = ((t/(38+i*9) + i*460) % (innerWidth+340)) - 170;
+    const cy2 = 60 + i*46;
+    ctx.beginPath();
+    ctx.ellipse(cx2, cy2, 58+i*7, 15, 0, 0, 7); ctx.ellipse(cx2+38, cy2+7, 38, 12, 0, 0, 7);
+    ctx.fill();
+  }
+  // hover highlight
+  if (hover && hover.b){
+    const b = hover.b, pTop = px(b.x, b.y, b.z + b.h), pTop2 = px(b.x+b.w, b.y+b.w, b.z + b.h);
+    const m = wpt({x:(pTop.x+pTop2.x)/2, y: pTop.y - 10});
+    ctx.strokeStyle = "#ffc857"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(m.x, m.y - 14); ctx.lineTo(m.x, m.y - 2);
+    ctx.moveTo(m.x-5, m.y - 8); ctx.lineTo(m.x, m.y - 2); ctx.lineTo(m.x+5, m.y-8); ctx.stroke();
+  }
+  ctx.restore();
+  if (location.search.includes("debug")) document.title =
+    `ph${phaseI} prims${prims.length} t${(t/1000).toFixed(1)} f${frame._n||0} done${buildDone}`;
+  requestAnimationFrame(frame);
+}
+addEventListener("error", e => { if (location.search.includes("debug")) document.title = "ERR " + e.message; });
+
+/* ================= input ================= */
+let drag = null, hover = null;
+cv.addEventListener("mousedown", e => { drag = { x: e.clientX, y: e.clientY }; cv.classList.add("dragging"); });
+addEventListener("mouseup", () => { drag = null; cv.classList.remove("dragging"); });
+addEventListener("mousemove", e => {
+  if (drag){
+    view.x += e.clientX - drag.x; view.y += e.clientY - drag.y;
+    drag = { x: e.clientX, y: e.clientY };
+    return;
+  }
+  // pick
+  const cw = cache.width/2, chh = cache.height/2;
+  const bx = innerWidth/2 - (cw/2)*view.z + view.x, by = innerHeight/2 - (chh/2)*view.z + view.y - 40;
+  const wx = (e.clientX - bx)/view.z, wy = (e.clientY - by)/view.z;
+  let best = null;
+  for (const b of buildings){
+    const tA = px(b.x, b.y, b.z + b.h), tC = px(b.x+b.w, b.y+b.w, b.z+b.h);
+    const gB = px(b.x+b.w, b.y, b.z), gD = px(b.x, b.y+b.w, b.z);
+    const x0 = gD.x, x1 = gB.x, y0 = tA.y, y1 = px(b.x+b.w, b.y+b.w, b.z).y;
+    if (wx >= x0 && wx <= x1 && wy >= y0 && wy <= y1){
+      const key = b.x + b.y;
+      if (!best || key > best.x + best.y) best = b;
+    }
+  }
+  hover = best ? { b: best } : null;
+  const tt = document.getElementById("tooltip");
+  if (best){
+    let html = "";
+    if (best.me) html = `<b>Shengkun's Keep 🏰</b><div class="m">pop. 1,638 · LVL 11 · Baron of the Algorithm</div><div class="m">beacon = blue check · height = your follower count</div>`;
+    else if (best.cot) html = `<b>A quiet cottage</b><div class="m">home to one of the 1,559 followers who watched silently this week. They're still counted. They still matter.</div>`;
+    else {
+      const c = best.cit, D = DISTRICTS[best.dk];
+      html = `<b>${c[1]}</b> <span class="h">@${c[0]}</span>
+        <div class="m">${(c[2]).toLocaleString()} followers${c[2]>=10000?" · 🐋 whale (gold cap)":""}</div>
+        <div>${c[5]}</div>
+        <span class="d" style="background:${D.ui}22;color:${D.ui};border:1px solid ${D.ui}55">${D.name}</span>`;
+    }
+    tt.innerHTML = html; tt.style.display = "block";
+    tt.style.left = Math.min(innerWidth-290, e.clientX + 16) + "px";
+    tt.style.top = Math.min(innerHeight-130, e.clientY + 14) + "px";
+    cv.style.cursor = best.cit ? "pointer" : "grab";
+  } else { tt.style.display = "none"; if (!drag) cv.style.cursor = "grab"; }
+});
+cv.addEventListener("click", () => {
+  if (hover && hover.b && hover.b.cit) open("https://x.com/" + hover.b.cit[0], "_blank");
+});
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const z0 = view.z;
+  view.z = Math.max(.45, Math.min(2.4, view.z * (e.deltaY < 0 ? 1.12 : .89)));
+  const k = view.z / z0;
+  view.x = (view.x - (e.clientX - innerWidth/2)) * k + (e.clientX - innerWidth/2);
+  view.y = (view.y - (e.clientY - innerHeight/2)) * k + (e.clientY - innerHeight/2);
+}, { passive: false });
+
+/* ================= panels ================= */
+function buildPanels(){
+  // avatar: pixel "S" on gold
+  const av = document.getElementById("avatar").getContext("2d");
+  const SPR = ["111111111","100000001","101111101","101100001","101111101","100000101","101111101","100000001","111111111"];
+  for (let y=0;y<9;y++) for (let x=0;x<9;x++){
+    av.fillStyle = SPR[y][x]==="1" ? "#ffc857" : "#1a1f2e";
+    av.fillRect(x,y,1,1);
+  }
+  // districts list
+  const byRole = {};
+  CITIZENS.forEach(c => byRole[c[3]] = (byRole[c[3]]||0)+1);
+  const order = Object.keys(DISTRICTS).sort((a,b)=>byRole[b]-byRole[a]);
+  const dl = document.getElementById("dlist");
+  dl.innerHTML = order.map(k => {
+    const D = DISTRICTS[k], n = byRole[k], pc = Math.round(100*n/CITIZENS.length);
+    return `<div class="drow" title="${D.tag}">
+      <span class="sw" style="background:${D.ui}"></span>
+      <span class="nm"><b>${D.name}</b><i>${D.tag}</i></span>
+      <span class="pc">${n}</span>
+      <span class="track"><i data-w="${pc}" style="background:${D.ui}"></i></span>
+    </div>`;
+  }).join("");
+  // badges
+  const bd = document.getElementById("badges");
+  bd.innerHTML = BADGES.map(([e, n, d]) => `<div class="badge" title="${n} — ${d}">${e}</div>`).join("");
+}
+
+function drawAtlas(){
+  const g = document.getElementById("worldmap").getContext("2d");
+  g.fillStyle = "#10203a"; g.fillRect(0,0,280,150);
+  g.fillStyle = "#1c3a2c";
+  const land = [
+    [16,28,56,22],[22,42,52,26],[34,64,28,16],[58,80,20,30],[62,106,14,24],
+    [120,30,28,18],[118,44,34,18],[120,62,38,34],[128,92,24,22],
+    [148,26,80,26],[152,46,70,22],[168,64,46,16],[196,82,38,14],
+    [216,102,34,22],[244,118,10,8],
+  ];
+  for (const [x,y,w,h] of land) g.fillRect(x,y,w,h);
+  g.fillStyle = "#234834";
+  for (const [x,y,w,h] of land) for (let i=0;i<6;i++)
+    g.fillRect(x+((i*37)%w), y+((i*23)%h), 3, 3);
+  for (const k in REGIONS){
+    const [x,y,n,label] = REGIONS[k];
+    const hgt = Math.min(34, 5 + n*2.4);
+    g.fillStyle = "rgba(255,200,87,.25)"; g.fillRect(x-2, y-hgt-2, 7, hgt+4);
+    g.fillStyle = "#ffc857"; g.fillRect(x, y-hgt, 3, hgt);
+    g.fillStyle = "#ffe4a3"; g.fillRect(x-1, y-hgt-2, 5, 3);
+    if (n >= 3){ g.fillStyle = "#cfd8ea"; g.font = "7px monospace"; g.fillText(label+" "+n, x+6, y-hgt+4); }
+  }
+}
+
+/* ================= kingdom card export ================= */
+function exportCard(){
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 675;
+  const g = c.getContext("2d");
+  // sky
+  const sky = g.createLinearGradient(0,0,0,675);
+  sky.addColorStop(0,"#0a0f24"); sky.addColorStop(1,"#222e58");
+  g.fillStyle = sky; g.fillRect(0,0,1200,675);
+  g.fillStyle = "#fff";
+  for (let i=0;i<150;i++){ g.globalAlpha = .2 + (i*7%10)/14; g.fillRect((i*97)%1200, (i*61)%420, 2, 2); }
+  g.globalAlpha = 1;
+  // skyline from cache (right 60%)
+  const wasNight = night;
+  if (!wasNight){ night = true; repaint(); }
+  g.imageSmoothingEnabled = false;
+  g.drawImage(cache, 72, 280, 3456, 1840, 380, 16, 860, 515);
+  if (!wasNight){ night = false; dirty = true; }
+  // ground fade
+  const fade = g.createLinearGradient(0,470,0,675);
+  fade.addColorStop(0,"rgba(10,15,36,0)"); fade.addColorStop(1,"rgba(10,15,36,.96)");
+  g.fillStyle = fade; g.fillRect(0,420,1200,255);
+  // left text block
+  g.textBaseline = "top";
+  g.fillStyle = "#ffc857"; g.font = "700 26px monospace";
+  g.fillText("⛏ AUDIENCE CRAFT", 48, 44);
+  g.fillStyle = "#e9edf5"; g.font = "700 44px monospace";
+  g.fillText("Shengkun", 48, 92);
+  g.fillStyle = "#5eead4"; g.font = "22px monospace";
+  g.fillText("@shengkun_ye ☑", 48, 144);
+  g.fillStyle = "#ffc857"; g.font = "700 28px monospace";
+  g.fillText("⚔ BARON OF THE ALGORITHM", 48, 196);
+  g.fillStyle = "#93a0b6"; g.font = "16px monospace";
+  g.fillText("follower:following 2.25 · est. June 2024", 48, 232);
+  // level bar
+  g.fillStyle = "#e9edf5"; g.font = "700 24px monospace";
+  g.fillText("LVL 11", 48, 278);
+  g.fillStyle = "rgba(255,255,255,.14)"; g.fillRect(140, 286, 200, 12);
+  g.fillStyle = "#5eead4"; g.fillRect(140, 286, 200*XP.intoLevel/XP.levelSpan, 12);
+  g.fillStyle = "#93a0b6"; g.font = "14px monospace";
+  g.fillText("1,233 XP harvested from 9 posts", 48, 312);
+  // stats
+  const stats = [
+    ["POPULATION", "1,638"],
+    ["REACH", "×99  (162,717 views)"],
+    ["COURT REACH", "157,723 followers"],
+    ["TOP DISTRICT", "Founders 51%"],
+    ["FORGE STREAK", "1.4 posts/day × 729d"],
+    ["TREASURY", "10,000 agent tx"],
+  ];
+  let yy = 356;
+  for (const [k2, v] of stats){
+    g.fillStyle = "#93a0b6"; g.font = "13px monospace"; g.fillText(k2, 48, yy);
+    g.fillStyle = "#e9edf5"; g.font = "700 19px monospace"; g.fillText(v, 190, yy-3);
+    yy += 34;
+  }
+  // badges
+  g.font = "26px monospace";
+  BADGES.forEach((b, i) => g.fillText(b[0], 48 + i*40, 575));
+  g.fillStyle = "#93a0b6"; g.font = "13px monospace";
+  g.fillText("10/10 achievements unlocked", 48, 612);
+  // footer + frame
+  g.fillStyle = "#697894"; g.font = "13px monospace"; g.textAlign = "right";
+  g.fillText("built from live X data via monid.ai · total data cost $0.0090 · 2026-06-10", 1156, 640);
+  g.textAlign = "left";
+  g.strokeStyle = "#ffc857"; g.lineWidth = 6; g.strokeRect(9, 9, 1182, 657);
+  g.strokeStyle = "rgba(255,200,87,.35)"; g.lineWidth = 2; g.strokeRect(19, 19, 1162, 637);
+  if (location.search.includes("cardtest")){ // headless test hook
+    c.style.cssText = "position:fixed;inset:0;z-index:99;width:100vw;height:auto";
+    document.body.appendChild(c);
+  } else {
+    const a = document.createElement("a");
+    a.download = "shengkun_ye-kingdom-card.png";
+    a.href = c.toDataURL("image/png");
+    a.click();
+  }
+  toast("🖼 Kingdom card saved — go forth and screenshot");
+  document.getElementById("btn-card").classList.remove("pulse");
+}
+
+/* ================= wire up ================= */
+document.getElementById("btn-night").onclick = () => {
+  night = !night; dirty = true;
+  document.getElementById("btn-night").textContent = night ? "☀ Day" : "🌙 Night";
+};
+document.getElementById("btn-rebuild").onclick = () => scheduleBuild();
+document.getElementById("btn-card").onclick = exportCard;
+document.getElementById("btn-log").onclick = () => document.getElementById("ticker").classList.toggle("mini");
+addEventListener("keydown", e => {
+  if (e.key === "n") document.getElementById("btn-night").click();
+  if (e.key === "r") document.getElementById("btn-rebuild").click();
+  if (e.key === "e") exportCard();
+  if (e.key === "l") document.getElementById("btn-log").click();
+});
+
+buildPanels();
+drawAtlas();
+scheduleBuild();
+if (location.search.includes("night")) document.getElementById("btn-night").click();
+if (location.search.includes("ff")){ // ?ff skips the build animation
+  let guard = 0;
+  while (!buildDone && guard++ < 20000) stepBuild(50);
+  repaint();
+  if (location.search.includes("cardtest")) exportCard();
+}
+requestAnimationFrame(frame);
+</script>
 </body>
 </html>
