@@ -8,7 +8,7 @@ open index.html          # or: python3 -m http.server & open http://localhost:80
 ```
 
 Everything in it is real data, pulled live on **2026-06-10** via
-[monid.ai](https://monid.ai) (provider: TikHub). Total data cost: **$0.0090**.
+[monid.ai](https://monid.ai) (provider: TikHub). Total data cost: **$0.0180**.
 
 ## What you'll see
 
@@ -18,8 +18,9 @@ Everything in it is real data, pulled live on **2026-06-10** via
 2. **The kingdom** — 1,638 followers set the island size (Barony class,
    radius 24 blocks). The central keep is @shengkun_ye; its beacon is the blue
    check, its height the follower count.
-3. **Eight districts**, sized by each role's real share of the 79 people who
-   engaged the last 9 posts: Founders' Keep (51%), Engineers' Forge, Design
+3. **Eight districts**, sized by each role's real share of the 85 people who
+   engage the account (commenters on the last 9 posts + named patrons):
+   Founders' Keep (47%), Engineers' Forge, Design
    Commons, Growth Bazaar, Crypto Docks, the **Bot Quarter** (4 literal AI
    agents — Boardy, Agent Hansa & co. — engage this account), VC Overlook (on a
    hill, obviously) and the Athenaeum. Every district flies its own
@@ -30,11 +31,11 @@ Everything in it is real data, pulled live on **2026-06-10** via
    "whale caps".
 4. **Game stats** — Level 11 from 1,233 real engagements (XP), the title
    *Baron of the Algorithm* from the 2.25 follower∶following ratio, a ×99
-   reach multiplier (162,717 views vs 1,638 followers), 157,723 court reach,
+   reach multiplier (162,717 views vs 1,638 followers), **1,005,083 court reach** (613× — the court out-reaches the kingdom a thousand times over),
    and a 10,000-gold treasury (real monid agent-transaction milestone).
 5. **10 achievements**, all earned from real patterns: surviving an account
-   hack, being discovered by an investor's AI agent, four 10K+ whales in the
-   replies, YC founders from four batches, 13 regions on the voxel atlas,
+   hack, being discovered by an investor's AI agent, nine 10K+ whales in the court
+   (Jesse Pollak 353K, Brycent 219K, Yohei 124K…), YC founders from four batches, 13 regions on the voxel atlas,
    1.4 posts/day for 729 days, and the kingdom's 2nd birthday on June 11.
 6. **🖼 Export Kingdom Card** — renders a shareable 1200×675 PNG.
 
@@ -51,8 +52,9 @@ card · `L` toggle the cost log. URL flags: `?ff` skips the build animation,
 | `GET /twitter/web/fetch_user_post_tweet` (screen_name) | 400 | $0 |
 | `GET /twitter/web/fetch_user_post_tweet` (rest_id) | 18 recent posts | $0.0015 |
 | `GET /twitter/web/fetch_post_comments` ×4 | 128 replies → 79 unique engagers (bios, follower counts) | $0.0060 |
-| **Total** | | **$0.0090** |
+| `GET /twitter/web/fetch_user_profile` ×6 | patron sweep: VCs & whales who back the account (4 retries free) | $0.0090 |
+| **Total** | | **$0.0180** |
 
 Engager roles and regions were classified from bios; locations come from bio
-text and affiliations, so the atlas is a best-effort map (37 of 79 pinned).
+text and affiliations, so the atlas is a best-effort map (42 of 85 pinned).
 The kingdom layout is seeded — the same data always builds the same kingdom.

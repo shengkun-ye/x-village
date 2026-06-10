@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Audience Craft — @shengkun_ye's voxel kingdom</title>
 <meta property="og:title" content="Audience Craft — @shengkun_ye's voxel kingdom" />
-<meta property="og:description" content="1,638 citizens · Baron of the Algorithm · Level 11 · built from live X data for $0.0090" />
+<meta property="og:description" content="1,638 citizens · Baron of the Algorithm · Level 11 · built from live X data for $0.0180" />
 <style>
   :root {
     --panel: rgba(13, 17, 27, 0.90);
@@ -167,7 +167,7 @@
     <div class="stat"><b id="st-pop">0</b><span>population (followers)</span></div>
     <div class="stat"><b id="st-allies">0</b><span>allies followed</span></div>
     <div class="stat wide"><b>📡 <em id="st-reach">×0</em> reach multiplier</b><span id="st-reach-n">…</span></div>
-    <div class="stat wide"><b>🏛 <em id="st-court">0</em> court reach</b><span>combined followers of your recent commenters — 96× your own population</span></div>
+    <div class="stat wide"><b>🏛 <em id="st-court">0</em> court reach</b><span>combined followers of your court (commenters + patrons) — 613× your population. Yes, a million.</span></div>
     <div class="stat"><b>💬 54%</b><span>hospitality — visitors who get a royal reply</span></div>
     <div class="stat"><b>⚒ 1.4/day</b><span>forge streak — 1,025 posts in 729 days</span></div>
     <div class="stat wide"><b>💰 10,000 gold</b><span>treasury — agent transactions banked on monid (real milestone, May 29)</span></div>
@@ -176,14 +176,14 @@
   <div class="sect">World class</div>
   <div style="font-size:11px;color:var(--muted);line-height:1.55">
     1,638 citizens → island radius <b style="color:var(--text)">24 blocks</b> — <b style="color:var(--gold)">Barony</b> class.
-    Named buildings house the <b style="color:var(--text)">79</b> people who engaged your recent posts; everyone else lives in the cottages.
+    Named buildings house the <b style="color:var(--text)">85</b> people who engage your posts (commenters + patrons); everyone else lives in the cottages.
   </div>
 </div>
 
 <div id="districts" class="panel">
   <div class="sect" style="margin-top:0">Voxel atlas — where they are</div>
   <div id="mapwrap"><canvas id="worldmap" width="280" height="150"></canvas></div>
-  <div id="mapnote">37 of 79 citizens pinned a hometown — 13 regions, 4 continents. Capital: <b style="color:var(--text)">SF Bay (14)</b>, then Europe (8), Toronto (3).<br><br>District names &amp; shares are on the billboards above each quarter — fly around!</div>
+  <div id="mapnote">42 of 85 citizens pinned a hometown — 13 regions, 4 continents. Capital: <b style="color:var(--text)">SF Bay (18)</b>, then Europe (8), Toronto (3).<br><br>District names &amp; shares are on the billboards above each quarter — fly around!</div>
 </div>
 
 <div id="badges" class="panel"></div>
@@ -213,7 +213,7 @@ const PROFILE = {
 // engagements & views across the 9 most recent original posts
 const QUESTS = { posts:9, engagements:1233, views:162717, topER:2.2, avgER:1.1 };
 const XP = { total:1233, level:11, intoLevel:23, levelSpan:230 }; // lvl n at 10·n² XP
-const COURT_REACH = 157723;
+const COURT_REACH = 1005083; // commenters 157,723 + patrons (VCs & whales) 847,360
 
 // roles: F founder · E engineer · G growth · D design/creator · V vc · C crypto · B AI-agent · R researcher
 // [handle, name, followers, role, region, note]
@@ -277,14 +277,20 @@ const CITIZENS = [
 ["saneord","san",498,"D",null,"i touch agents · the rando guy @ AgentChat"],
 ["wiamxyz","Wiam",1757,"D",null,"“I draw nice rectangles.”"],
 ["JFinnyc","JF 👾",1588,"D","NYC","honest notes on vibe coding & china AI"],
-["adilmania","Adil Mania",11204,"D","SF","making tech fun again @siliconmania"],
+["adilmania","Adil Mania",11204,"G","SF","making tech fun again @siliconmania"],
 ["edgardesigns","Edgar Magaña",378,"D",null,"CTO (chief taste officer)"],
 ["samhayek_","Sam",3072,"D",null,"A/V artist · designer · poet"],
 ["dakshpixelup","Daksh",7006,"D",null,"founder @pixeluplabs · B2B design"],
 ["Nacc0110","Mann Bandooni",47,"D",null,"founder of design agency nacc"],
 ["gre1nerX","Philipp Greiner",36,"V","EU","leading @Tulip_AMS · exploring @Unrulyvc"],
+["hthieblot","Hubert Thieblot",58337,"V","SF","investing @fdotinc · founded @curseforge (acq. @Twitch)"],
+["yoheinakajima","Yohei",124819,"V","SEA","VC by day @untappedvc, builder by night (@babyagi_)"],
+["fdotinc","Founders Inc",85099,"V","SF","where the world's most ambitious founders start"],
+["cyntro_py","stepan",6392,"V","SF","building / investing in AI-native orgs · cyber.fund"],
+["brycent","Brycent",219422,"V",null,"@Vesting_tv · finding the next unicorn startup"],
 ["butshaunn","Shaun Gold",7847,"V",null,"VC (Venture Comedy) — putting the fun in fund"],
 ["byalexai","Alex / AI Experiments",7103,"V",null,"70+ PH launches · scouting VC signals"],
+["jessepollak","jesse.base.eth",353291,"C","SF","@base builder #001"],
 ["Mathilda_Sun_","Mathilda",2740,"C","SG","building @tiprun_markets · prev @binancelabs"],
 ["0xmesuthere","mesut",831,"C",null,"building @moltycash"],
 ["ChadoOfWeb3","Chado 🫶🤖",2719,"C",null,"AI + crypto enthusiast"],
@@ -314,13 +320,13 @@ const BUILD_ORDER = ["V","R","B","E","G","C","D","F"]; // back → front for pai
 const BADGES = [
   ["🛡","Phoenix Protocol","Survived an account hack (May 24) — denied the fake token, kept building."],
   ["🤖","Seen by Machines","An investor found you through his AI agent. Boardy & Agent Hansa hang out in your replies."],
-  ["🏰","Founder Magnet","51% of your court are founders — the keep overflows."],
+  ["🏰","Founder Magnet","47% of your court are founders — the keep overflows."],
   ["📡","60K Beacon","Pinned post hit 60,730 views — 37× your population."],
   ["🌍","Thirteen Banners","Citizens from 13 regions across 4 continents."],
   ["🦄","YC Adjacent","Founders from YC S20, S23, W22 and P26 reply to you."],
   ["⚒","Daily Smith","1,025 posts in 729 days — 1.4/day for two years straight."],
   ["🎂","Anniversary Eve","Kingdom founded June 11, 2024 — it turns 2 TOMORROW."],
-  ["🐋","Whale Watcher","Four 10K+ accounts commented recently (19.1K, 13.7K, 11.2K, 11.2K)."],
+  ["🐋","Whale Watcher","Nine 10K+ accounts in your court — topped by 353K (@jessepollak), 219K (@brycent), 125K (@yoheinakajima)."],
   ["💰","10K Treasury","10,000 agent transactions banked on monid — the kingdom's GDP."],
 ];
 
@@ -334,12 +340,13 @@ const TICKER = [
   ["[tikhub] GET fetch_post_comments?tweet_id=2059379616… (agent-investor) — 42 replies", 0.0015, "ok"],
   ["[tikhub] GET fetch_post_comments?tweet_id=2060413361… (10k transactions) — 15 replies", 0.0015, "ok"],
   ["[tikhub] GET fetch_post_comments?tweet_id=2057524508… (pinned, retried) — 44 replies", 0.0015, "ok"],
-  ["[monid] survey complete — 79 citizens · 9 calls · 6 billed · 0 humans harmed", 0, "free"],
-  ["[monid] TOTAL DATA COST ............................................. $0.0090", 0, "total"],
+  ["[tikhub] GET fetch_user_profile ×6 — patron sweep (@jessepollak, @brycent, @yoheinakajima…) · 4 retries free", 0.0090, "ok"],
+  ["[monid] survey complete — 85 citizens · 19 calls · 12 billed · 0 humans harmed", 0, "free"],
+  ["[monid] TOTAL DATA COST ............................................. $0.0180", 0, "total"],
 ];
 
 const REGIONS = { // [x, y, count, label] on the 280×150 atlas
-  SF:[26,58,14,"SF Bay"], SEA:[28,46,1,"Seattle"], TX:[48,66,1,"Texas"], MW:[54,52,1,"Midwest"],
+  SF:[26,58,18,"SF Bay"], SEA:[28,46,2,"Seattle"], TX:[48,66,1,"Texas"], MW:[54,52,1,"Midwest"],
   NYC:[66,52,2,"NYC"], NE:[70,47,1,"New England"], TOR:[60,45,3,"Toronto"], LDN:[126,42,1,"London"],
   EU:[138,50,8,"Europe"], BER:[143,44,1,"Berlin"], BLK:[147,56,1,"Balkans"], SG:[206,90,2,"Singapore"],
   SYD:[238,116,1,"Sydney"],
@@ -626,12 +633,13 @@ function stepBuild(dt){
 
 function finale(){
   buildDone = true;
+  emitTick(11);
   repaint();
   spawnWalkers();
   burstConfetti();
   document.getElementById("ticker").classList.add("mini");
   document.getElementById("btn-card").classList.add("pulse");
-  toast("⛏ Kingdom complete — 79 named citizens settled for $0.0090");
+  toast("⛏ Kingdom complete — 85 named citizens settled for $0.0180");
 }
 
 /* ================= UI anim helpers ================= */
@@ -863,7 +871,7 @@ addEventListener("mousemove", e => {
   if (best){
     let html = "";
     if (best.me) html = `<b>Shengkun's Keep 🏰</b><div class="m">pop. 1,638 · LVL 11 · Baron of the Algorithm</div><div class="m">beacon = blue check · height = your follower count</div>`;
-    else if (best.cot) html = `<b>A quiet cottage</b><div class="m">home to one of the 1,559 followers who watched silently this week. They're still counted. They still matter.</div>`;
+    else if (best.cot) html = `<b>A quiet cottage</b><div class="m">home to one of the 1,553 followers who watched silently this week. They're still counted. They still matter.</div>`;
     else {
       const c = best.cit, D = DISTRICTS[best.dk];
       html = `<b>${c[1]}</b> <span class="h">@${c[0]}</span>
@@ -971,8 +979,8 @@ function exportCard(){
   const stats = [
     ["POPULATION", "1,638"],
     ["REACH", "×99  (162,717 views)"],
-    ["COURT REACH", "157,723 followers"],
-    ["TOP DISTRICT", "Founders 51%"],
+    ["COURT REACH", "1,005,083 followers"],
+    ["TOP DISTRICT", "Founders 47%"],
     ["FORGE STREAK", "1.4 posts/day × 729d"],
     ["TREASURY", "10,000 agent tx"],
   ];
@@ -989,7 +997,7 @@ function exportCard(){
   g.fillText("10/10 achievements unlocked", 48, 612);
   // footer + frame
   g.fillStyle = "#697894"; g.font = "13px monospace"; g.textAlign = "right";
-  g.fillText("built from live X data via monid.ai · total data cost $0.0090 · 2026-06-10", 1156, 640);
+  g.fillText("built from live X data via monid.ai · total data cost $0.0180 · 2026-06-10", 1156, 640);
   g.textAlign = "left";
   g.strokeStyle = "#ffc857"; g.lineWidth = 6; g.strokeRect(9, 9, 1182, 657);
   g.strokeStyle = "rgba(255,200,87,.35)"; g.lineWidth = 2; g.strokeRect(19, 19, 1162, 637);
