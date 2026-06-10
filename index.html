@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Audience Craft — voxel village of your X audience</title>
+<style>
+  :root {
+    --panel: rgba(16, 20, 30, 0.88);
+    --panel-border: rgba(255, 255, 255, 0.09);
+    --text: #e8ecf4;
+    --muted: #9aa5b8;
+    --accent: #ffc857;
+    --accent2: #5eead4;
+    --danger: #ff7b72;
+    --radius: 12px;
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0e14; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); }
+  #scene { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 30px rgba(0,0,0,.35);
+  }
+
+  #topbar {
+    position: fixed; top: 14px; left: 14px; right: 14px;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 10px 14px; z-index: 10;
+  }
+  #topbar h1 {
+    margin: 0 6px 0 0; font-size: 17px; letter-spacing: .04em; white-space: nowrap;
+  }
+  #topbar h1 .voxel-a { color: var(--accent); }
+  #topbar .sub { color: var(--muted); font-size: 12px; margin-right: auto; white-space: nowrap; }
+  input, select, button {
+    font: inherit; color: var(--text);
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px; padding: 7px 11px; outline: none;
+  }
+  input::placeholder { color: #6b7689; }
+  input:focus, select:focus { border-color: var(--accent2); }
+  #handle { width: 200px; }
+  button { cursor: pointer; transition: filter .15s, transform .05s; }
+  button:hover { filter: brightness(1.2); }
+  button:active { transform: translateY(1px); }
+  button.primary { background: var(--accent); color: #1a1405; font-weight: 700; border-color: transparent; }
+  button:disabled { opacity: .5; cursor: wait; }
+
+  #keyrow { display: flex; gap: 8px; align-items: center; width: 100%; }
+  #keyrow input { flex: 1; min-width: 160px; }
+  #keyrow .hint { color: var(--muted); font-size: 12px; }
+  .hidden { display: none !important; }
+
+  #stats {
+    position: fixed; top: 86px; left: 14px; width: 320px; max-height: calc(100vh - 110px);
+    overflow-y: auto; padding: 16px; z-index: 9;
+    scrollbar-width: thin;
+  }
+  #stats h2 { font-size: 14px; margin: 0 0 4px; }
+  #stats .handle-line { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  #stats .bigstat { display: flex; gap: 14px; margin-bottom: 12px; }
+  #stats .bigstat div b { display: block; font-size: 18px; }
+  #stats .bigstat div span { color: var(--muted); font-size: 11px; }
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 14px 0 7px; }
+  .bar-row { display: grid; grid-template-columns: 116px 1fr 38px; gap: 8px; align-items: center; margin: 5px 0; font-size: 12.5px; }
+  .bar-row .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .bar-track { height: 8px; background: rgba(255,255,255,.07); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-row .pct { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .loc-row { display: flex; justify-content: space-between; font-size: 12.5px; margin: 3px 0; color: var(--text); }
+  .loc-row span:last-child { color: var(--muted); }
+  #legend { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  #legend b { color: var(--text); font-weight: 600; }
+
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 20;
+    padding: 10px 12px; max-width: 280px; font-size: 12.5px; line-height: 1.45;
+    transform: translate(14px, 14px); display: none;
+  }
+  #tooltip .tt-name { font-weight: 700; font-size: 13.5px; }
+  #tooltip .tt-handle { color: var(--accent2); }
+  #tooltip .tt-meta { color: var(--muted); margin-top: 3px; }
+  #tooltip .tt-bio { margin-top: 5px; color: #c6cedd; }
+  #tooltip .tt-tier { display: inline-block; margin-top: 6px; padding: 2px 7px; border-radius: 99px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; }
+
+  #overlay {
+    position: fixed; inset: 0; z-index: 30; display: none;
+    background: rgba(8, 10, 16, .72); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  }
+  #overlay .spinner {
+    width: 44px; height: 44px; border-radius: 8px;
+    background: var(--accent);
+    animation: hop 0.9s infinite ease-in-out;
+  }
+  @keyframes hop {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-22px) rotate(90deg); }
+  }
+  #overlay .msg { color: var(--text); font-size: 14px; }
+  #error {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    z-index: 25; padding: 10px 16px; color: var(--danger); font-size: 13px;
+    display: none; max-width: 80vw;
+  }
+  #hint {
+    position: fixed; bottom: 14px; right: 14px; z-index: 9;
+    padding: 8px 12px; color: var(--muted); font-size: 11.5px;
+  }
+  @media (max-width: 760px) {
+    #stats { display: none; }
+    #handle { width: 130px; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="scene"></div>
+
+  <div id="topbar" class="panel">
+    <h1>⛏ AUDIENCE <span class="voxel-a">CRAFT</span></h1>
+    <span class="sub">your X audience as a voxel village · data via monid.ai</span>
+    <input id="handle" placeholder="@handle (e.g. AnthropicAI)" spellcheck="false" />
+    <select id="depth" title="Follower pages to fetch (~70 followers each)">
+      <option value="1">1 page (~70)</option>
+      <option value="2" selected>2 pages (~140)</option>
+      <option value="3">3 pages (~210)</option>
+      <option value="5">5 pages (~350)</option>
+    </select>
+    <button id="generate" class="primary">⚒ Craft village</button>
+    <button id="demo">Demo</button>
+    <button id="daynight" title="Toggle day / night">🌙</button>
+    <div id="keyrow" class="hidden">
+      <span class="hint">No local proxy detected — paste a monid.ai API key (kept in your browser):</span>
+      <input id="apikey" type="password" placeholder="mk_..." spellcheck="false" />
+    </div>
+  </div>
+
+  <div id="stats" class="panel hidden"></div>
+  <div id="tooltip" class="panel"></div>
+  <div id="overlay"><div class="spinner"></div><div class="msg" id="overlay-msg">Surveying the land…</div></div>
+  <div id="error" class="panel"></div>
+  <div id="hint" class="panel">drag to orbit · scroll to zoom · hover a house to meet its resident · click to visit their profile</div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
